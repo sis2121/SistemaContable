@@ -5,7 +5,7 @@ from services.plan_cuentas import PlanCuentasService
 app = FastAPI()
 service = PlanCuentasService()
 
-# 🔥 CORS (ESTO ARREGLA TU ERROR)
+# ---------------- CORS ----------------
 origins = [
     "https://sistema-contable-flax.vercel.app",
     "http://localhost:3000",
@@ -19,9 +19,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# -----------------------
-# RUTAS
-# -----------------------
+# ---------------- ENDPOINTS ----------------
 
 @app.get("/cuentas")
 def listar():
@@ -31,6 +29,7 @@ def listar():
 def insertar(data: dict):
     return service.insertar(data["codigo"], data["nombre"])
 
+# 🔥 NUEVO: eliminar por código
 @app.delete("/cuentas/{codigo}")
 def eliminar(codigo: str):
     return service.eliminar(codigo)

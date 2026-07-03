@@ -2,36 +2,45 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <title>Sistema Contable</title>
-
+    <title>Plan de Cuentas</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
   </head>
 
   <body class="bg-gray-100">
-    <div class="max-w-xl mx-auto mt-10 bg-white p-6 rounded-xl shadow">
-      <h1 class="text-2xl font-bold flex gap-2 items-center">
-        <i data-lucide="book"></i>
-        Plan de Cuentas
-      </h1>
+    <div class="max-w-4xl mx-auto mt-10 p-6 bg-white rounded-xl shadow">
+      <!-- TITULO -->
+      <h1 class="text-2xl font-bold text-gray-800 mb-6">📊 Plan de Cuentas</h1>
 
-      <input id="codigo" class="border p-2 w-full mt-4" placeholder="Código" />
-      <input id="nombre" class="border p-2 w-full mt-2" placeholder="Nombre" />
+      <!-- FORMULARIO -->
+      <div class="grid grid-cols-3 gap-3 mb-6">
+        <input
+          id="codigo"
+          placeholder="Código"
+          class="border p-2 rounded focus:outline-blue-500"
+        />
 
-      <button
-        onclick="guardar()"
-        class="bg-blue-600 text-white px-4 py-2 mt-3 rounded"
-      >
-        Agregar
-      </button>
+        <input
+          id="nombre"
+          placeholder="Nombre de la cuenta"
+          class="border p-2 rounded focus:outline-blue-500 col-span-2"
+        />
 
-      <ul id="lista" class="mt-5 space-y-2"></ul>
+        <button
+          onclick="guardar()"
+          class="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded col-span-3 transition"
+        >
+          ➕ Agregar Cuenta
+        </button>
+      </div>
+
+      <!-- LISTA -->
+      <div class="bg-gray-50 p-4 rounded">
+        <h2 class="text-lg font-semibold mb-3">Cuentas registradas</h2>
+
+        <ul id="lista" class="space-y-2"></ul>
+      </div>
     </div>
 
     <script src="app.js"></script>
-
-    <script>
-      lucide.createIcons();
-    </script>
   </body>
 </html>
