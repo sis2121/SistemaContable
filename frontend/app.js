@@ -1,4 +1,4 @@
-const API = "https://TU-BACKEND.onrender.com";
+const API = "https://sistema-contable-backend-xglb.onrender.com";
 
 async function cargar() {
   const res = await fetch(`${API}/cuentas`);
