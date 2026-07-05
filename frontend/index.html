@@ -2,35 +2,690 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <title>Sistema Contable</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sistema Contable · Librería Moderna</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+      /* Personalización extra */
+      .shadow-soft {
+        box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.1);
+      }
+      .scrollbar-thin::-webkit-scrollbar {
+        width: 4px;
+      }
+      .scrollbar-thin::-webkit-scrollbar-thumb {
+        background: #475569;
+        border-radius: 10px;
+      }
+      .toast-enter {
+        animation: slideIn 0.3s ease-out;
+      }
+      @keyframes slideIn {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+    </style>
   </head>
-  <body
-    class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center"
-  >
-    <div class="text-center space-y-8">
-      <h1 class="text-4xl font-bold text-white">Sistema Contable</h1>
-      <p class="text-slate-400">Seleccioná un módulo</p>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <a
-          href="plan_cuentas.html"
-          class="rounded-2xl bg-sky-500/20 p-8 hover:bg-sky-500/30 transition"
+  <body class="bg-stone-50 text-stone-800 font-sans antialiased">
+    <!-- Contenedor de toast -->
+    <div id="toast" class="fixed top-6 right-6 z-50 hidden"></div>
+
+    <div class="flex h-screen overflow-hidden">
+      <!-- ========== SIDEBAR ========== -->
+      <aside
+        class="w-72 bg-gradient-to-b from-amber-900 to-amber-950 text-amber-50 flex flex-col p-6 shadow-2xl"
+      >
+        <div class="flex items-center gap-3 mb-12">
+          <i data-lucide="library-big" class="w-10 h-10 text-amber-300"></i>
+          <div>
+            <h2 class="text-xl font-bold tracking-tight">Contable</h2>
+            <p class="text-xs text-amber-200/70">Gestión profesional</p>
+          </div>
+        </div>
+
+        <nav class="space-y-2 flex-1">
+          <button
+            onclick="mostrarModulo('plan')"
+            id="nav-plan"
+            class="w-full flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-amber-800/50 transition-all duration-200 active:bg-amber-800/70"
+          >
+            <i data-lucide="book-open-text" class="w-5 h-5"></i>
+            <span class="font-medium">Plan de Cuentas</span>
+          </button>
+
+          <button
+            onclick="mostrarModulo('balance')"
+            id="nav-balance"
+            class="w-full flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-amber-800/50 transition-all duration-200 active:bg-amber-800/70"
+          >
+            <i data-lucide="scale" class="w-5 h-5"></i>
+            <span class="font-medium">Balance Inicial</span>
+          </button>
+
+          <button
+            onclick="mostrarModulo('diario')"
+            id="nav-diario"
+            class="w-full flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-amber-800/50 transition-all duration-200 active:bg-amber-800/70"
+          >
+            <i data-lucide="scroll-text" class="w-5 h-5"></i>
+            <span class="font-medium">Libro Diario</span>
+          </button>
+        </nav>
+
+        <div
+          class="mt-auto pt-6 border-t border-amber-800/50 text-xs text-amber-200/60 flex items-center gap-2"
         >
-          <h2 class="text-2xl font-semibold text-white">Plan de Cuentas</h2>
-        </a>
-        <a
-          href="balance_inicial.html"
-          class="rounded-2xl bg-emerald-500/20 p-8 hover:bg-emerald-500/30 transition"
-        >
-          <h2 class="text-2xl font-semibold text-white">Balance Inicial</h2>
-        </a>
-        <a
-          href="libro_diario.html"
-          class="rounded-2xl bg-amber-500/20 p-8 hover:bg-amber-500/30 transition"
-        >
-          <h2 class="text-2xl font-semibold text-white">Libro Diario</h2>
-        </a>
-      </div>
+          <i data-lucide="settings" class="w-4 h-4"></i>
+          v1.0 · Contable
+        </div>
+      </aside>
+
+      <!-- ========== CONTENIDO PRINCIPAL ========== -->
+      <main class="flex-1 overflow-y-auto p-8 bg-stone-50/90">
+        <div id="contenido" class="max-w-6xl mx-auto space-y-8">
+          <!-- Se carga dinámicamente -->
+        </div>
+      </main>
     </div>
+
+    <script>
+      // ===================== CONFIGURACIÓN =====================
+      const API = "https://sistema-contable-backend-xglb.onrender.com";
+
+      // ===================== TOAST =====================
+      function showToast(message, type = "error") {
+        const toast = document.getElementById("toast");
+        const colors = {
+          error: "bg-rose-600 border-rose-400 text-rose-50",
+          success: "bg-emerald-600 border-emerald-400 text-emerald-50",
+        };
+        toast.className = `fixed top-6 right-6 z-50 px-6 py-3 rounded-2xl border shadow-lg toast-enter ${colors[type]}`;
+        toast.innerHTML = `
+        <div class="flex items-center gap-2">
+          <i data-lucide="${type === "error" ? "alert-triangle" : "check-circle"}" class="w-5 h-5"></i>
+          <span class="text-sm font-medium">${message}</span>
+          <button onclick="document.getElementById('toast').classList.add('hidden')" class="ml-4 hover:opacity-80">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>`;
+        toast.classList.remove("hidden");
+        lucide.createIcons();
+        setTimeout(() => {
+          toast.classList.add("hidden");
+        }, 4000);
+      }
+
+      // ===================== ORDENAMIENTO =====================
+      function parseCodigo(codigo) {
+        return codigo
+          .split(".")
+          .map((s) => (/^\d+$/.test(s) ? parseInt(s, 10) : s.toLowerCase()));
+      }
+      function compararCodigo(a, b) {
+        const la = parseCodigo(a.codigo),
+          lb = parseCodigo(b.codigo);
+        for (let i = 0; i < Math.max(la.length, lb.length); i++) {
+          if (la[i] === undefined) return -1;
+          if (lb[i] === undefined) return 1;
+          if (la[i] < lb[i]) return -1;
+          if (la[i] > lb[i]) return 1;
+        }
+        return 0;
+      }
+
+      // ===================== NAVEGACIÓN =====================
+      function mostrarModulo(modulo) {
+        // Reset active nav
+        document
+          .querySelectorAll("aside button")
+          .forEach((b) => b.classList.remove("bg-amber-800/60"));
+        document
+          .getElementById(`nav-${modulo}`)
+          .classList.add("bg-amber-800/60");
+
+        const cont = document.getElementById("contenido");
+        cont.innerHTML = "";
+
+        switch (modulo) {
+          case "plan":
+            cargarPlanCuentas();
+            break;
+          case "balance":
+            cargarBalance();
+            break;
+          case "diario":
+            cargarLibroDiario();
+            break;
+        }
+        lucide.createIcons();
+      }
+
+      // ===================== 1. PLAN DE CUENTAS =====================
+      async function cargarPlanCuentas() {
+        const cont = document.getElementById("contenido");
+        cont.innerHTML = `
+        <div class="flex items-center justify-between mb-8">
+          <div>
+            <h1 class="text-3xl font-bold text-stone-800">Plan de Cuentas</h1>
+            <p class="text-stone-500">Gestión jerárquica de códigos contables</p>
+          </div>
+          <button onclick="cargarPlanCuentas()" class="px-4 py-2 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-xl transition flex items-center gap-2">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i> Actualizar
+          </button>
+        </div>
+
+        <!-- Tarjetas de acciones -->
+        <div class="grid lg:grid-cols-2 gap-6 mb-8">
+          <div class="bg-white p-6 rounded-3xl shadow-soft border border-stone-200">
+            <h2 class="text-lg font-semibold text-stone-700 mb-4 flex items-center gap-2">
+              <i data-lucide="plus-circle" class="w-5 h-5 text-emerald-600"></i> Nueva cuenta
+            </h2>
+            <div class="space-y-3">
+              <input id="codigoPlan" placeholder="Código (ej: 1.1.2)" class="w-full rounded-xl border border-stone-300 px-4 py-2.5 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none">
+              <input id="nombrePlan" placeholder="Nombre de la cuenta" class="w-full rounded-xl border border-stone-300 px-4 py-2.5 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none">
+              <select id="tipoPlan" class="w-full rounded-xl border border-stone-300 px-4 py-2.5 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none bg-white">
+                <option value="ACTIVO">Activo</option>
+                <option value="PASIVO">Pasivo</option>
+                <option value="PATRIMONIO">Patrimonio</option>
+                <option value="INGRESO">Ingreso</option>
+                <option value="COSTO">Costo</option>
+                <option value="GASTO">Gasto</option>
+              </select>
+              <button onclick="guardarCuenta()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium transition shadow-md">
+                Agregar cuenta
+              </button>
+            </div>
+          </div>
+
+          <div class="bg-white p-6 rounded-3xl shadow-soft border border-stone-200">
+            <h2 class="text-lg font-semibold text-stone-700 mb-4 flex items-center gap-2">
+              <i data-lucide="trash-2" class="w-5 h-5 text-rose-600"></i> Eliminar cuenta
+            </h2>
+            <div class="space-y-3">
+              <input id="codigoEliminarPlan" placeholder="Código exacto a eliminar" class="w-full rounded-xl border border-stone-300 px-4 py-2.5 focus:border-rose-500 outline-none">
+              <button onclick="eliminarCuenta()" class="w-full py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-medium transition shadow-md">
+                Eliminar cuenta
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Listado -->
+        <div class="bg-white rounded-3xl shadow-soft border border-stone-200 p-6">
+          <h2 class="text-xl font-semibold text-stone-700 mb-4">Cuentas registradas</h2>
+          <ul id="listaPlan" class="space-y-2 max-h-96 overflow-y-auto scrollbar-thin"></ul>
+        </div>
+      `;
+        await listarCuentas();
+        lucide.createIcons();
+      }
+
+      async function listarCuentas() {
+        const lista = document.getElementById("listaPlan");
+        lista.innerHTML = "";
+        try {
+          const res = await fetch(`${API}/cuentas`);
+          const cuentas = await res.json();
+          cuentas.sort(compararCodigo);
+          if (!cuentas.length) {
+            lista.innerHTML =
+              '<li class="text-stone-400 italic p-4 text-center">No hay cuentas.</li>';
+            return;
+          }
+          cuentas.forEach((c) => {
+            const nivel = c.codigo.split(".").length - 1;
+            lista.innerHTML += `
+            <li class="flex items-center justify-between bg-stone-50 p-3 rounded-xl border border-stone-100 hover:bg-amber-50/50 transition"
+                style="padding-left:${nivel * 1.5}rem;">
+              <div>
+                <span class="font-mono font-semibold text-amber-900">${c.codigo}</span>
+                <span class="text-stone-600 ml-2">${c.nombre}</span>
+                <span class="text-xs text-stone-400 ml-2">(${c.tipo})</span>
+              </div>
+              <button onclick="eliminarCuentaPorCodigo('${c.codigo}')" class="text-rose-500 hover:text-rose-700 transition p-1">
+                <i data-lucide="x-circle" class="w-5 h-5"></i>
+              </button>
+            </li>`;
+          });
+          lucide.createIcons();
+        } catch (e) {
+          lista.innerHTML = `<li class="text-rose-500 p-4">Error al cargar</li>`;
+        }
+      }
+
+      async function guardarCuenta() {
+        const codigo = document.getElementById("codigoPlan").value.trim();
+        const nombre = document.getElementById("nombrePlan").value.trim();
+        const tipo = document.getElementById("tipoPlan").value;
+        if (!codigo || !nombre)
+          return showToast("Completá todos los campos", "error");
+        try {
+          const res = await fetch(`${API}/cuentas`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ codigo, nombre, tipo }),
+          });
+          if (!res.ok) {
+            const error = await res.json();
+            throw new Error(error.detail || "Error al guardar");
+          }
+          showToast("Cuenta agregada correctamente", "success");
+          document.getElementById("codigoPlan").value = "";
+          document.getElementById("nombrePlan").value = "";
+          listarCuentas();
+        } catch (e) {
+          showToast(e.message, "error");
+        }
+      }
+
+      async function eliminarCuentaPorCodigo(codigo) {
+        if (!confirm(`¿Eliminar la cuenta ${codigo}?`)) return;
+        try {
+          await fetch(`${API}/cuentas/${codigo}`, { method: "DELETE" });
+          showToast("Cuenta eliminada", "success");
+          listarCuentas();
+        } catch (e) {
+          showToast("Error al eliminar", "error");
+        }
+      }
+
+      async function eliminarCuenta() {
+        const codigo = document
+          .getElementById("codigoEliminarPlan")
+          .value.trim();
+        if (!codigo) return showToast("Ingresá el código", "error");
+        await eliminarCuentaPorCodigo(codigo);
+        document.getElementById("codigoEliminarPlan").value = "";
+      }
+
+      // ===================== 2. BALANCE INICIAL =====================
+      async function cargarBalance() {
+        const cont = document.getElementById("contenido");
+        cont.innerHTML = `
+        <div class="flex items-center justify-between mb-8">
+          <div>
+            <h1 class="text-3xl font-bold text-stone-800">Balance Inicial</h1>
+            <p class="text-stone-500">Saldos de apertura por cuenta</p>
+          </div>
+          <button onclick="cargarBalance()" class="px-4 py-2 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-xl transition flex items-center gap-2">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i> Actualizar
+          </button>
+        </div>
+
+        <div class="grid lg:grid-cols-2 gap-6 mb-8">
+          <div class="bg-white p-6 rounded-3xl shadow-soft border border-stone-200">
+            <h2 class="text-lg font-semibold mb-4 flex items-center gap-2"><i data-lucide="wallet" class="w-5 h-5 text-emerald-600"></i> Agregar/Editar saldo</h2>
+            <div class="space-y-3">
+              <input id="codigoBalance" placeholder="Código de cuenta" class="w-full rounded-xl border border-stone-300 px-4 py-2.5">
+              <input id="saldoBalance" type="number" step="0.01" placeholder="Saldo" class="w-full rounded-xl border border-stone-300 px-4 py-2.5">
+              <select id="debeHaberBalance" class="w-full rounded-xl border border-stone-300 px-4 py-2.5 bg-white">
+                <option value="DEBE">DEBE</option>
+                <option value="HABER">HABER</option>
+              </select>
+              <button onclick="guardarSaldo()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium transition">
+                Guardar saldo
+              </button>
+            </div>
+          </div>
+
+          <div class="bg-white p-6 rounded-3xl shadow-soft border border-stone-200">
+            <h2 class="text-lg font-semibold mb-4 flex items-center gap-2"><i data-lucide="pencil" class="w-5 h-5 text-amber-600"></i> Editar saldo</h2>
+            <div class="space-y-3">
+              <input id="codigoEditarBalance" placeholder="Código de cuenta" class="w-full rounded-xl border border-stone-300 px-4 py-2.5">
+              <input id="nuevoSaldoBalance" type="number" step="0.01" placeholder="Nuevo saldo" class="w-full rounded-xl border border-stone-300 px-4 py-2.5">
+              <div class="flex gap-3">
+                <button onclick="editarSaldo()" class="flex-1 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-medium">Editar</button>
+                <button onclick="eliminarSaldo()" class="flex-1 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-medium">Eliminar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-3xl shadow-soft border border-stone-200 p-6">
+          <h2 class="text-xl font-semibold mb-4">Saldos iniciales (distintos de cero)</h2>
+          <ul id="listaBalance" class="space-y-2 max-h-96 overflow-y-auto scrollbar-thin"></ul>
+        </div>
+      `;
+        await listarBalances();
+        lucide.createIcons();
+      }
+
+      async function listarBalances() {
+        const lista = document.getElementById("listaBalance");
+        lista.innerHTML = "";
+        try {
+          const res = await fetch(`${API}/balance-inicial`);
+          const balances = await res.json();
+          if (!balances.length) {
+            lista.innerHTML =
+              '<li class="text-stone-400 italic p-4 text-center">No hay saldos iniciales (con saldo ≠ 0).</li>';
+            return;
+          }
+          balances.forEach((b) => {
+            lista.innerHTML += `
+            <li class="flex justify-between items-center bg-stone-50 p-3 rounded-xl border border-stone-100">
+              <div>
+                <span class="font-mono font-semibold text-amber-900">${b.codigo}</span>
+                <span class="text-stone-600 ml-2">${b.nombre}</span>
+              </div>
+              <span class="font-mono text-sm px-3 py-1 rounded-full ${b.debe_haber === "DEBE" ? "bg-blue-100 text-blue-800" : "bg-rose-100 text-rose-800"}">
+                ${b.debe_haber} $${b.saldo}
+              </span>
+            </li>`;
+          });
+        } catch (e) {
+          lista.innerHTML =
+            '<li class="text-rose-500 p-4">Error al cargar saldos.</li>';
+        }
+      }
+
+      async function guardarSaldo() {
+        const codigo = document.getElementById("codigoBalance").value.trim();
+        const saldo = document.getElementById("saldoBalance").value;
+        const debeHaber = document.getElementById("debeHaberBalance").value;
+        if (!codigo || !saldo) return showToast("Completá los campos", "error");
+        try {
+          await fetch(`${API}/balance-inicial`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              codigo,
+              saldo: parseFloat(saldo),
+              debe_haber: debeHaber,
+            }),
+          });
+          showToast("Saldo guardado", "success");
+          document.getElementById("codigoBalance").value = "";
+          document.getElementById("saldoBalance").value = "";
+          listarBalances();
+        } catch (e) {
+          showToast(e.message, "error");
+        }
+      }
+
+      async function editarSaldo() {
+        const codigo = document
+          .getElementById("codigoEditarBalance")
+          .value.trim();
+        const saldo = document.getElementById("nuevoSaldoBalance").value;
+        if (!codigo || !saldo)
+          return showToast("Ingresá código y nuevo saldo", "error");
+        try {
+          await fetch(`${API}/balance-inicial/${codigo}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ saldo: parseFloat(saldo) }),
+          });
+          showToast("Saldo actualizado", "success");
+          listarBalances();
+        } catch (e) {
+          showToast(e.message, "error");
+        }
+      }
+
+      async function eliminarSaldo() {
+        const codigo = document
+          .getElementById("codigoEditarBalance")
+          .value.trim();
+        if (!codigo) return showToast("Ingresá código", "error");
+        try {
+          await fetch(`${API}/balance-inicial/${codigo}`, { method: "DELETE" });
+          showToast("Saldo eliminado", "success");
+          listarBalances();
+        } catch (e) {
+          showToast(e.message, "error");
+        }
+      }
+
+      // ===================== 3. LIBRO DIARIO =====================
+      async function cargarLibroDiario() {
+        const cont = document.getElementById("contenido");
+        cont.innerHTML = `
+        <div class="flex items-center justify-between mb-8">
+          <div>
+            <h1 class="text-3xl font-bold text-stone-800">Libro Diario</h1>
+            <p class="text-stone-500">Asientos contables ordenados por fecha</p>
+          </div>
+          <button onclick="cargarLibroDiario()" class="px-4 py-2 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-xl transition flex items-center gap-2">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i> Actualizar
+          </button>
+        </div>
+
+        <div class="grid lg:grid-cols-2 gap-6 mb-8">
+          <div class="bg-white p-6 rounded-3xl shadow-soft border border-stone-200">
+            <h2 class="text-lg font-semibold mb-4 flex items-center gap-2"><i data-lucide="file-plus" class="w-5 h-5 text-emerald-600"></i> Nuevo asiento</h2>
+            <div class="space-y-3">
+              <input type="date" id="fechaDiario" class="w-full rounded-xl border border-stone-300 px-4 py-2.5">
+              <input id="glosaDiario" placeholder="Glosa" class="w-full rounded-xl border border-stone-300 px-4 py-2.5">
+              <div id="lineasDiarioContainer" class="space-y-2">
+                <div class="linea flex gap-2 items-center">
+                  <input placeholder="Código" class="codigoDiario w-1/3 rounded-xl border border-stone-300 px-3 py-2">
+                  <select class="debeHaberDiario w-1/4 rounded-xl border border-stone-300 px-2 py-2 bg-white">
+                    <option value="DEBE">DEBE</option>
+                    <option value="HABER">HABER</option>
+                  </select>
+                  <input type="number" step="0.01" placeholder="Monto" class="montoDiario w-1/3 rounded-xl border border-stone-300 px-3 py-2">
+                  <button onclick="this.parentElement.remove()" class="text-rose-500 hover:text-rose-700"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                </div>
+              </div>
+              <button onclick="agregarLineaDiario()" class="text-sm text-amber-700 hover:underline flex items-center gap-1"><i data-lucide="plus" class="w-3 h-3"></i> Agregar línea</button>
+              <button onclick="registrarAsientoDiario()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium transition">
+                Registrar asiento
+              </button>
+            </div>
+          </div>
+
+          <div class="bg-white p-6 rounded-3xl shadow-soft border border-stone-200">
+            <h2 class="text-lg font-semibold mb-4 flex items-center gap-2"><i data-lucide="folder-edit" class="w-5 h-5 text-amber-600"></i> Editar / Eliminar</h2>
+            <div class="space-y-3">
+              <input type="number" id="idEditarDiario" placeholder="ID del asiento" class="w-full rounded-xl border border-stone-300 px-4 py-2.5">
+              <div class="flex gap-3">
+                <button onclick="cargarAsientoEditarDiario()" class="flex-1 py-2 bg-sky-100 text-sky-800 rounded-xl hover:bg-sky-200 font-medium">Cargar</button>
+                <button onclick="eliminarAsientoDiario()" class="flex-1 py-2 bg-rose-100 text-rose-800 rounded-xl hover:bg-rose-200 font-medium">Eliminar</button>
+              </div>
+              <div id="editorDiario" class="hidden space-y-3 mt-3">
+                <input type="date" id="editFechaDiario" class="w-full rounded-xl border border-stone-300 px-4 py-2.5">
+                <input id="editGlosaDiario" placeholder="Glosa" class="w-full rounded-xl border border-stone-300 px-4 py-2.5">
+                <div id="editLineasDiarioContainer" class="space-y-2"></div>
+                <button onclick="agregarLineaEditarDiario()" class="text-sm text-amber-700 hover:underline flex items-center gap-1"><i data-lucide="plus" class="w-3 h-3"></i> Agregar línea</button>
+                <button onclick="guardarEdicionDiario()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium">Guardar cambios</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-3xl shadow-soft border border-stone-200 p-6">
+          <h2 class="text-xl font-semibold mb-4">Asientos registrados</h2>
+          <div id="listaAsientosDiario" class="space-y-4 max-h-96 overflow-y-auto scrollbar-thin"></div>
+        </div>
+      `;
+        await listarAsientosDiario();
+        lucide.createIcons();
+      }
+
+      // Funciones auxiliares Libro Diario
+      function agregarLineaDiario() {
+        const container = document.getElementById("lineasDiarioContainer");
+        const div = document.createElement("div");
+        div.className = "linea flex gap-2 items-center";
+        div.innerHTML = `
+        <input placeholder="Código" class="codigoDiario w-1/3 rounded-xl border border-stone-300 px-3 py-2">
+        <select class="debeHaberDiario w-1/4 rounded-xl border border-stone-300 px-2 py-2 bg-white">
+          <option value="DEBE">DEBE</option>
+          <option value="HABER">HABER</option>
+        </select>
+        <input type="number" step="0.01" placeholder="Monto" class="montoDiario w-1/3 rounded-xl border border-stone-300 px-3 py-2">
+        <button onclick="this.parentElement.remove()" class="text-rose-500 hover:text-rose-700"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`;
+        container.appendChild(div);
+        lucide.createIcons();
+      }
+
+      async function registrarAsientoDiario() {
+        const fecha = document.getElementById("fechaDiario").value;
+        const glosa = document.getElementById("glosaDiario").value.trim();
+        if (!fecha || !glosa)
+          return showToast("Completá fecha y glosa", "error");
+        const lineas = [];
+        document.querySelectorAll(".linea").forEach((el) => {
+          const codigo = el.querySelector(".codigoDiario").value.trim();
+          const debeHaber = el.querySelector(".debeHaberDiario").value;
+          const monto = parseFloat(el.querySelector(".montoDiario").value);
+          if (codigo && !isNaN(monto))
+            lineas.push({ codigo, debe_haber: debeHaber, monto });
+        });
+        if (lineas.length < 2) return showToast("Mínimo dos líneas", "error");
+        try {
+          await fetch(`${API}/asientos`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ fecha, glosa, lineas }),
+          });
+          showToast("Asiento registrado", "success");
+          document.getElementById("fechaDiario").value = "";
+          document.getElementById("glosaDiario").value = "";
+          document.getElementById("lineasDiarioContainer").innerHTML = "";
+          agregarLineaDiario(); // agrega una línea vacía
+          listarAsientosDiario();
+        } catch (e) {
+          showToast(e.message, "error");
+        }
+      }
+
+      async function listarAsientosDiario() {
+        const lista = document.getElementById("listaAsientosDiario");
+        lista.innerHTML = "";
+        try {
+          const res = await fetch(`${API}/asientos`);
+          const asientos = await res.json();
+          if (!asientos.length) {
+            lista.innerHTML =
+              '<p class="text-stone-400 italic p-4 text-center">No hay asientos.</p>';
+            return;
+          }
+          asientos.forEach((a) => {
+            let detalle = "";
+            a.lineas.forEach((l) => {
+              detalle += `<li class="flex justify-between text-sm"><span class="font-mono">${l.codigo}</span> <span>${l.nombre}</span> <span class="font-mono">${l.debe_haber} $${l.monto}</span></li>`;
+            });
+            lista.innerHTML += `
+            <div class="border border-stone-200 rounded-2xl p-4 bg-stone-50">
+              <div class="flex justify-between items-start mb-2">
+                <h3 class="font-bold text-amber-900">Asiento #${a.id_asiento}</h3>
+                <span class="text-xs text-stone-500">${a.fecha}</span>
+              </div>
+              <p class="text-stone-600 text-sm mb-2">${a.glosa}</p>
+              <ul class="space-y-1">${detalle}</ul>
+            </div>`;
+          });
+          lucide.createIcons();
+        } catch (e) {
+          lista.innerHTML =
+            '<p class="text-rose-500 p-4">Error al cargar asientos.</p>';
+        }
+      }
+
+      async function cargarAsientoEditarDiario() {
+        const id = document.getElementById("idEditarDiario").value;
+        if (!id) return showToast("Ingresá ID", "error");
+        try {
+          const res = await fetch(`${API}/asientos`);
+          const asientos = await res.json();
+          const asiento = asientos.find((a) => a.id_asiento == id);
+          if (!asiento) return showToast("Asiento no encontrado", "error");
+          document.getElementById("editFechaDiario").value = asiento.fecha;
+          document.getElementById("editGlosaDiario").value = asiento.glosa;
+          const cont = document.getElementById("editLineasDiarioContainer");
+          cont.innerHTML = "";
+          asiento.lineas.forEach((l) => {
+            cont.innerHTML += `
+            <div class="linea-edit flex gap-2 items-center">
+              <input class="codigoEdit w-1/3 rounded-xl border border-stone-300 px-3 py-2" value="${l.codigo}">
+              <select class="debeHaberEdit w-1/4 rounded-xl border border-stone-300 px-2 py-2 bg-white">
+                <option value="DEBE" ${l.debe_haber === "DEBE" ? "selected" : ""}>DEBE</option>
+                <option value="HABER" ${l.debe_haber === "HABER" ? "selected" : ""}>HABER</option>
+              </select>
+              <input type="number" step="0.01" class="montoEdit w-1/3 rounded-xl border border-stone-300 px-3 py-2" value="${l.monto}">
+              <button onclick="this.parentElement.remove()" class="text-rose-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            </div>`;
+          });
+          document.getElementById("editorDiario").classList.remove("hidden");
+          lucide.createIcons();
+        } catch (e) {
+          showToast(e.message, "error");
+        }
+      }
+
+      function agregarLineaEditarDiario() {
+        const cont = document.getElementById("editLineasDiarioContainer");
+        const div = document.createElement("div");
+        div.className = "linea-edit flex gap-2 items-center";
+        div.innerHTML = `
+        <input placeholder="Código" class="codigoEdit w-1/3 rounded-xl border border-stone-300 px-3 py-2">
+        <select class="debeHaberEdit w-1/4 rounded-xl border border-stone-300 px-2 py-2 bg-white">
+          <option value="DEBE">DEBE</option>
+          <option value="HABER">HABER</option>
+        </select>
+        <input type="number" step="0.01" placeholder="Monto" class="montoEdit w-1/3 rounded-xl border border-stone-300 px-3 py-2">
+        <button onclick="this.parentElement.remove()" class="text-rose-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`;
+        cont.appendChild(div);
+        lucide.createIcons();
+      }
+
+      async function guardarEdicionDiario() {
+        const id = document.getElementById("idEditarDiario").value;
+        const fecha = document.getElementById("editFechaDiario").value;
+        const glosa = document.getElementById("editGlosaDiario").value.trim();
+        if (!fecha || !glosa)
+          return showToast("Completá fecha y glosa", "error");
+        const lineas = [];
+        document.querySelectorAll(".linea-edit").forEach((el) => {
+          const codigo = el.querySelector(".codigoEdit").value.trim();
+          const debeHaber = el.querySelector(".debeHaberEdit").value;
+          const monto = parseFloat(el.querySelector(".montoEdit").value);
+          if (codigo && !isNaN(monto))
+            lineas.push({ codigo, debe_haber: debeHaber, monto });
+        });
+        try {
+          await fetch(`${API}/asientos/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ fecha, glosa, lineas }),
+          });
+          showToast("Asiento actualizado", "success");
+          document.getElementById("editorDiario").classList.add("hidden");
+          listarAsientosDiario();
+        } catch (e) {
+          showToast(e.message, "error");
+        }
+      }
+
+      async function eliminarAsientoDiario() {
+        const id = document.getElementById("idEditarDiario").value;
+        if (!id) return showToast("Ingresá ID", "error");
+        if (!confirm("¿Eliminar asiento?")) return;
+        try {
+          await fetch(`${API}/asientos/${id}`, { method: "DELETE" });
+          showToast("Asiento eliminado", "success");
+          listarAsientosDiario();
+        } catch (e) {
+          showToast(e.message, "error");
+        }
+      }
+
+      // ===================== INICIALIZAR =====================
+      window.addEventListener("load", () => {
+        lucide.createIcons();
+        mostrarModulo("plan"); // módulo por defecto
+      });
+    </script>
   </body>
 </html>
