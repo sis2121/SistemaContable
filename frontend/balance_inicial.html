@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Balance Inicial</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-slate-950 min-h-screen text-slate-100">
+    <div class="max-w-6xl mx-auto py-10 px-4">
+      <a href="index.html" class="text-sky-400 text-sm mb-6 inline-block"
+        >← Volver al inicio</a
+      >
+      <div
+        class="bg-slate-900/95 border border-slate-700 shadow-2xl rounded-3xl p-8"
+      >
+        <h1 class="text-4xl font-bold text-white mb-10">Balance Inicial</h1>
+
+        <!-- Agregar / Editar saldo -->
+        <div class="grid gap-6 lg:grid-cols-2 mb-8">
+          <div
+            class="space-y-4 p-6 bg-slate-950/80 border border-slate-800 rounded-3xl shadow-inner"
+          >
+            <h2 class="text-xl font-semibold text-white">
+              Agregar saldo a cuenta
+            </h2>
+            <div class="space-y-3">
+              <label class="block text-sm text-slate-300"
+                >Código de cuenta</label
+              >
+              <input
+                id="codigoSaldo"
+                placeholder="1.1.1"
+                class="w-full rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3"
+              />
+            </div>
+            <div class="space-y-3">
+              <label class="block text-sm text-slate-300">Saldo</label>
+              <input
+                id="saldo"
+                type="number"
+                step="0.01"
+                class="w-full rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3"
+              />
+            </div>
+            <div class="space-y-3">
+              <label class="block text-sm text-slate-300">Estado</label>
+              <select
+                id="debeHaber"
+                class="w-full rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3"
+              >
+                <option value="DEBE">DEBE</option>
+                <option value="HABER">HABER</option>
+              </select>
+            </div>
+            <button
+              onclick="agregarSaldo()"
+              class="w-full rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-slate-950 hover:bg-emerald-400"
+            >
+              💾 Guardar saldo
+            </button>
+          </div>
+
+          <!-- Editar / Eliminar por código -->
+          <div
+            class="space-y-4 p-6 bg-slate-950/80 border border-slate-800 rounded-3xl shadow-inner"
+          >
+            <h2 class="text-xl font-semibold text-white">Editar saldo</h2>
+            <div class="space-y-3">
+              <label class="block text-sm text-slate-300"
+                >Código de cuenta</label
+              >
+              <input
+                id="codigoEditar"
+                placeholder="1.1.1"
+                class="w-full rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3"
+              />
+            </div>
+            <div class="space-y-3">
+              <label class="block text-sm text-slate-300">Nuevo saldo</label>
+              <input
+                id="nuevoSaldo"
+                type="number"
+                step="0.01"
+                class="w-full rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3"
+              />
+            </div>
+            <div class="flex gap-4">
+              <button
+                onclick="editarSaldo()"
+                class="flex-1 rounded-2xl bg-amber-500 px-4 py-3 text-sm font-semibold text-slate-950 hover:bg-amber-400"
+              >
+                ✏️ Editar
+              </button>
+              <button
+                onclick="eliminarSaldo()"
+                class="flex-1 rounded-2xl bg-rose-500 px-4 py-3 text-sm font-semibold text-white hover:bg-rose-400"
+              >
+                🗑️ Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Listado -->
+        <div
+          class="p-6 bg-slate-950/80 border border-slate-800 rounded-3xl shadow-xl"
+        >
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-2xl font-semibold text-white">Saldos iniciales</h2>
+            <button
+              onclick="cargarSaldos()"
+              class="rounded-full bg-sky-500 px-6 py-3 text-sm font-semibold text-slate-950 hover:bg-sky-400"
+            >
+              Actualizar
+            </button>
+          </div>
+          <ul id="listaSaldos" class="space-y-3"></ul>
+        </div>
+      </div>
+    </div>
+    <script src="app_balance_inicial.js"></script>
+  </body>
+</html>
