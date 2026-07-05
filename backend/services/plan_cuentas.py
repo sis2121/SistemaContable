@@ -1,9 +1,26 @@
-from fastapi import HTTPException
 from config.supabase_client import supabase
-import re
+from fastapi import HTTPException
 
 class PlanCuentasService:
-    # ... (los demás métodos se mantienen)
+
+    def _parse_codigo(self, codigo: str):
+        parts = codigo.split('.')
+        parsed = []
+        for p in parts:
+            if p.isdigit():
+                parsed.append(int(p))
+            else:
+                parsed.append(p.lower())
+        return parsed
+
+    def listar(self):
+        res = supabase.table("plan_cuentas") \
+                     .select("*") \
+                     .order("codigo") \
+                     .execute().data
+        if not res:
+            return []
+        return sorted(res, key=lambda x: self._parse_codigo(x["codigo"]))
 
     def insertar(self, codigo: str, nombre: str, tipo: str):
         if tipo in ('ACTIVO', 'COSTO', 'GASTO'):
@@ -26,3 +43,9 @@ class PlanCuentasService:
             if "duplicate key" in error_str or "23505" in error_str:
                 raise HTTPException(status_code=409, detail="El código de cuenta ya existe. Usá uno distinto.")
             raise HTTPException(status_code=400, detail=str(e))
+
+    def eliminar(self, codigo: str):
+        return supabase.table("plan_cuentas") \
+                      .delete() \
+                      .eq("codigo", codigo) \
+                      .execute().data
