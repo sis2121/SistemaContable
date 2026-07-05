@@ -9,7 +9,6 @@ plan_service = PlanCuentasService()
 balance_service = BalanceInicialService()
 diario_service = LibroDiarioService()
 
-# CORS
 origins = [
     "https://sistema-contable-flax.vercel.app",
     "http://localhost:3000",
@@ -23,7 +22,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ------------------ PLAN DE CUENTAS ------------------
+# Plan de cuentas
 @app.get("/cuentas")
 def listar_cuentas():
     return plan_service.listar()
@@ -31,7 +30,7 @@ def listar_cuentas():
 @app.post("/cuentas")
 def crear_cuenta(data: dict):
     try:
-        return plan_service.insertar(data["codigo"], data["nombre"], data["tipo"])
+        return plan_service.insertar(data["codigo"], data["nombre"])
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -39,15 +38,12 @@ def crear_cuenta(data: dict):
 def eliminar_cuenta(codigo: str):
     return plan_service.eliminar(codigo)
 
-# ------------------ BALANCE INICIAL ------------------
+# Balance inicial
 @app.post("/balance-inicial")
 def agregar_saldo(data: dict):
-    try:
-        return balance_service.agregar_o_actualizar(
-            data["codigo"], float(data["saldo"]), data["debe_haber"]
-        )
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return balance_service.agregar_o_actualizar(
+        data["codigo"], float(data["saldo"]), data["debe_haber"]
+    )
 
 @app.get("/balance-inicial")
 def listar_saldos():
@@ -55,27 +51,18 @@ def listar_saldos():
 
 @app.put("/balance-inicial/{codigo}")
 def editar_saldo(codigo: str, data: dict):
-    try:
-        return balance_service.editar(codigo, float(data["saldo"]))
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return balance_service.editar(codigo, float(data["saldo"]))
 
 @app.delete("/balance-inicial/{codigo}")
 def eliminar_saldo(codigo: str):
-    try:
-        return balance_service.eliminar(codigo)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return balance_service.eliminar(codigo)
 
-# ------------------ LIBRO DIARIO ------------------
+# Libro diario
 @app.post("/asientos")
 def crear_asiento(data: dict):
-    try:
-        return diario_service.registrar_asiento(
-            data["fecha"], data["glosa"], data["lineas"]
-        )
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return diario_service.registrar_asiento(
+        data["fecha"], data["glosa"], data["lineas"]
+    )
 
 @app.get("/asientos")
 def listar_asientos():
@@ -87,9 +74,6 @@ def eliminar_asiento(id_asiento: int):
 
 @app.put("/asientos/{id_asiento}")
 def editar_asiento(id_asiento: int, data: dict):
-    try:
-        return diario_service.editar_asiento(
-            id_asiento, data["fecha"], data["glosa"], data["lineas"]
-        )
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return diario_service.editar_asiento(
+        id_asiento, data["fecha"], data["glosa"], data["lineas"]
+    )

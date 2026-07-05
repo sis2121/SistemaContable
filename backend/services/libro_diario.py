@@ -1,11 +1,9 @@
 from config.supabase_client import supabase
+from fastapi import HTTPException
 
 class LibroDiarioService:
 
     def registrar_asiento(self, fecha: str, glosa: str, lineas: list):
-        """
-        lineas: [ { "codigo": "1.1.1", "debe_haber": "DEBE", "monto": 1000.00 }, ... ]
-        """
         # Insertar cabecera
         asiento = supabase.table("asientos").insert({
             "fecha": fecha,
@@ -14,47 +12,47 @@ class LibroDiarioService:
 
         id_asiento = asiento["id_asiento"]
 
-        # Obtener id_cuenta por código
+        # Validar que todas las cuentas existan
         codigos = [l["codigo"] for l in lineas]
         cuentas_db = supabase.table("plan_cuentas") \
-                            .select("codigo, id_cuenta") \
+                            .select("codigo") \
                             .in_("codigo", codigos) \
                             .execute().data
-        mapa = {c["codigo"]: c["id_cuenta"] for c in cuentas_db}
+        existentes = {c["codigo"] for c in cuentas_db}
+        for c in codigos:
+            if c not in existentes:
+                raise HTTPException(status_code=400, detail=f"Cuenta no encontrada: {c}")
 
         detalles = []
         for linea in lineas:
-            id_cuenta = mapa.get(linea["codigo"])
-            if not id_cuenta:
-                raise Exception(f"Cuenta no encontrada: {linea['codigo']}")
             detalles.append({
                 "id_asiento": id_asiento,
-                "id_cuenta": id_cuenta,
+                "codigo": linea["codigo"],
                 "debe_haber": linea["debe_haber"],
                 "monto": linea["monto"]
             })
-
         supabase.table("detalle_asientos").insert(detalles).execute()
         return asiento
 
     def listar_asientos(self):
-        # Obtener cabeceras ordenadas por fecha ascendente
         asientos = supabase.table("asientos") \
                           .select("*") \
                           .order("fecha") \
                           .execute().data
-
         for a in asientos:
             detalles = supabase.table("detalle_asientos") \
-                              .select("id_detalle, debe_haber, monto, plan_cuentas!inner(codigo, nombre)") \
+                              .select("codigo, debe_haber, monto") \
                               .eq("id_asiento", a["id_asiento"]) \
                               .execute().data
             lineas = []
             for d in detalles:
-                c = d["plan_cuentas"]
+                cuenta_info = supabase.table("plan_cuentas") \
+                                    .select("nombre") \
+                                    .eq("codigo", d["codigo"]) \
+                                    .single().execute().data
                 lineas.append({
-                    "codigo": c["codigo"],
-                    "nombre": c["nombre"],
+                    "codigo": d["codigo"],
+                    "nombre": cuenta_info["nombre"] if cuenta_info else "",
                     "debe_haber": d["debe_haber"],
                     "monto": d["monto"]
                 })
@@ -68,34 +66,31 @@ class LibroDiarioService:
                       .execute().data
 
     def editar_asiento(self, id_asiento: int, fecha: str, glosa: str, lineas: list):
-        # Actualizar cabecera
         supabase.table("asientos").update({
             "fecha": fecha,
             "glosa": glosa
         }).eq("id_asiento", id_asiento).execute()
 
-        # Borrar detalles anteriores
         supabase.table("detalle_asientos") \
                .delete() \
                .eq("id_asiento", id_asiento) \
                .execute()
 
-        # Insertar nuevos
         codigos = [l["codigo"] for l in lineas]
         cuentas_db = supabase.table("plan_cuentas") \
-                            .select("codigo, id_cuenta") \
+                            .select("codigo") \
                             .in_("codigo", codigos) \
                             .execute().data
-        mapa = {c["codigo"]: c["id_cuenta"] for c in cuentas_db}
+        existentes = {c["codigo"] for c in cuentas_db}
+        for c in codigos:
+            if c not in existentes:
+                raise HTTPException(status_code=400, detail=f"Cuenta no encontrada: {c}")
 
         nuevos = []
         for l in lineas:
-            id_cuenta = mapa.get(l["codigo"])
-            if not id_cuenta:
-                raise Exception(f"Cuenta no encontrada: {l['codigo']}")
             nuevos.append({
                 "id_asiento": id_asiento,
-                "id_cuenta": id_cuenta,
+                "codigo": l["codigo"],
                 "debe_haber": l["debe_haber"],
                 "monto": l["monto"]
             })
