@@ -7,7 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-      /* Personalizaciones */
       .sidebar-transition {
         transition:
           transform 0.3s ease,
@@ -41,7 +40,6 @@
       .toast-enter {
         animation: slideIn 0.3s ease-out;
       }
-      /* Fondo de gradiente sutil para sidebar */
       .sidebar-gradient {
         background: linear-gradient(
           135deg,
@@ -57,12 +55,9 @@
     </style>
   </head>
   <body class="bg-stone-100 text-stone-800 font-sans antialiased">
-    <!-- Toast container -->
     <div id="toast" class="fixed top-6 right-6 z-50 hidden"></div>
 
     <div class="flex h-screen overflow-hidden">
-      <!-- ========== SIDEBAR ========== -->
-      <!-- Overlay para móvil -->
       <div
         id="sidebarOverlay"
         class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden"
@@ -80,7 +75,6 @@
             <p class="text-xs text-amber-200/70">Gestión de librería</p>
           </div>
         </div>
-
         <nav class="space-y-2 flex-1">
           <button
             onclick="mostrarModulo('plan')"
@@ -90,7 +84,6 @@
             <i data-lucide="book-open-text" class="w-5 h-5"></i>
             <span class="font-medium">Plan de Cuentas</span>
           </button>
-
           <button
             onclick="mostrarModulo('balance')"
             id="nav-balance"
@@ -99,7 +92,6 @@
             <i data-lucide="scale" class="w-5 h-5"></i>
             <span class="font-medium">Balance Inicial</span>
           </button>
-
           <button
             onclick="mostrarModulo('diario')"
             id="nav-diario"
@@ -109,18 +101,15 @@
             <span class="font-medium">Libro Diario</span>
           </button>
         </nav>
-
         <div
           class="mt-auto pt-6 border-t border-white/20 text-xs text-amber-200/60 flex items-center gap-2"
         >
           <i data-lucide="settings" class="w-4 h-4"></i>
-          v2.0 · Premium
+          v2.1 · Premium
         </div>
       </aside>
 
-      <!-- ========== CONTENIDO PRINCIPAL ========== -->
       <main class="flex-1 overflow-y-auto p-4 md:p-8 bg-stone-50/90 w-full">
-        <!-- Header móvil con botón hamburguesa -->
         <div class="lg:hidden mb-6 flex items-center gap-4">
           <button
             onclick="toggleSidebar()"
@@ -131,17 +120,13 @@
           <h1 class="text-2xl font-bold text-stone-800">ContablePro</h1>
         </div>
 
-        <div id="contenido" class="max-w-6xl mx-auto space-y-8">
-          <!-- Se carga dinámicamente -->
-        </div>
+        <div id="contenido" class="max-w-6xl mx-auto space-y-8"></div>
       </main>
     </div>
 
     <script>
-      // ===================== CONFIGURACIÓN =====================
       const API = "https://sistema-contable-backend-xglb.onrender.com";
 
-      // ===================== TOAST =====================
       function showToast(message, type = "error") {
         const toast = document.getElementById("toast");
         const colors = {
@@ -164,7 +149,6 @@
         }, 4000);
       }
 
-      // ===================== SIDEBAR MOBILE =====================
       function toggleSidebar() {
         const sidebar = document.getElementById("sidebar");
         const overlay = document.getElementById("sidebarOverlay");
@@ -179,7 +163,6 @@
         }
       }
 
-      // ===================== ORDENAMIENTO =====================
       function parseCodigo(codigo) {
         return codigo
           .split(".")
@@ -197,15 +180,12 @@
         return 0;
       }
 
-      // ===================== NAVEGACIÓN =====================
       function mostrarModulo(modulo) {
         cerrarSidebarMobile();
-        // Reset active nav
         document
           .querySelectorAll(".nav-item")
           .forEach((b) => b.classList.remove("active-nav"));
         document.getElementById(`nav-${modulo}`).classList.add("active-nav");
-
         const cont = document.getElementById("contenido");
         cont.innerHTML =
           '<div class="flex justify-center items-center py-20"><i data-lucide="loader-2" class="w-10 h-10 animate-spin text-amber-600"></i></div>';
@@ -224,7 +204,7 @@
         }
       }
 
-      // ===================== 1. PLAN DE CUENTAS =====================
+      // ===================== PLAN DE CUENTAS =====================
       async function cargarPlanCuentas() {
         const cont = document.getElementById("contenido");
         cont.innerHTML = `
@@ -237,40 +217,25 @@
             <i data-lucide="refresh-cw" class="w-4 h-4"></i> Actualizar
           </button>
         </div>
-
-        <!-- Tarjetas de acciones -->
         <div class="grid md:grid-cols-2 gap-6 mb-8">
           <div class="bg-white p-6 rounded-3xl shadow-soft border border-stone-200 card-hover transition-all">
-            <h2 class="text-lg font-semibold text-stone-700 mb-4 flex items-center gap-2">
-              <i data-lucide="plus-circle" class="w-5 h-5 text-emerald-600"></i> Nueva cuenta
-            </h2>
+            <h2 class="text-lg font-semibold text-stone-700 mb-4 flex items-center gap-2"><i data-lucide="plus-circle" class="w-5 h-5 text-emerald-600"></i> Nueva cuenta</h2>
             <div class="space-y-3">
               <input id="codigoPlan" placeholder="Código (ej: 1.1.2)" class="w-full rounded-xl border border-stone-300 px-4 py-2.5 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none transition">
               <input id="nombrePlan" placeholder="Nombre de la cuenta" class="w-full rounded-xl border border-stone-300 px-4 py-2.5 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none transition">
-              <button onclick="guardarCuenta()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium transition shadow-md">
-                Agregar cuenta
-              </button>
+              <button onclick="guardarCuenta()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium transition shadow-md">Agregar cuenta</button>
             </div>
           </div>
-
           <div class="bg-white p-6 rounded-3xl shadow-soft border border-stone-200 card-hover transition-all">
-            <h2 class="text-lg font-semibold text-stone-700 mb-4 flex items-center gap-2">
-              <i data-lucide="trash-2" class="w-5 h-5 text-rose-600"></i> Eliminar cuenta
-            </h2>
+            <h2 class="text-lg font-semibold text-stone-700 mb-4 flex items-center gap-2"><i data-lucide="trash-2" class="w-5 h-5 text-rose-600"></i> Eliminar cuenta</h2>
             <div class="space-y-3">
               <input id="codigoEliminarPlan" placeholder="Código exacto a eliminar" class="w-full rounded-xl border border-stone-300 px-4 py-2.5 focus:border-rose-500 outline-none transition">
-              <button onclick="eliminarCuenta()" class="w-full py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-medium transition shadow-md">
-                Eliminar cuenta
-              </button>
+              <button onclick="eliminarCuenta()" class="w-full py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-medium transition shadow-md">Eliminar cuenta</button>
             </div>
           </div>
         </div>
-
-        <!-- Listado -->
         <div class="bg-white rounded-3xl shadow-soft border border-stone-200 p-6">
-          <h2 class="text-xl font-semibold text-stone-700 mb-4 flex items-center gap-2">
-            <i data-lucide="list" class="w-5 h-5 text-amber-600"></i> Cuentas registradas
-          </h2>
+          <h2 class="text-xl font-semibold text-stone-700 mb-4 flex items-center gap-2"><i data-lucide="list" class="w-5 h-5 text-amber-600"></i> Cuentas registradas</h2>
           <ul id="listaPlan" class="space-y-2 max-h-96 overflow-y-auto scrollbar-thin"></ul>
         </div>
       `;
@@ -360,14 +325,14 @@
         document.getElementById("codigoEliminarPlan").value = "";
       }
 
-      // ===================== 2. BALANCE INICIAL =====================
+      // ===================== BALANCE INICIAL (con selector de cuentas hoja) =====================
       async function cargarBalance() {
         const cont = document.getElementById("contenido");
         cont.innerHTML = `
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
           <div>
             <h1 class="text-3xl font-bold text-stone-800">Balance Inicial</h1>
-            <p class="text-stone-500">Saldos de apertura por cuenta</p>
+            <p class="text-stone-500">Saldos de apertura (solo cuentas hoja)</p>
           </div>
           <button onclick="cargarBalance()" class="px-4 py-2 bg-white border border-stone-300 hover:bg-stone-50 text-stone-700 rounded-xl transition flex items-center gap-2 shadow-sm">
             <i data-lucide="refresh-cw" class="w-4 h-4"></i> Actualizar
@@ -378,7 +343,10 @@
           <div class="bg-white p-6 rounded-3xl shadow-soft border border-stone-200 card-hover transition-all">
             <h2 class="text-lg font-semibold mb-4 flex items-center gap-2"><i data-lucide="wallet" class="w-5 h-5 text-emerald-600"></i> Agregar/Editar saldo</h2>
             <div class="space-y-3">
-              <input id="codigoBalance" placeholder="Código de cuenta" class="w-full rounded-xl border border-stone-300 px-4 py-2.5">
+              <label class="text-sm text-stone-500">Cuenta</label>
+              <select id="codigoBalance" class="w-full rounded-xl border border-stone-300 px-4 py-2.5 bg-white">
+                <option value="">Seleccionar cuenta...</option>
+              </select>
               <input id="saldoBalance" type="number" step="0.01" placeholder="Saldo" class="w-full rounded-xl border border-stone-300 px-4 py-2.5">
               <select id="debeHaberBalance" class="w-full rounded-xl border border-stone-300 px-4 py-2.5 bg-white">
                 <option value="DEBE">DEBE</option>
@@ -393,8 +361,11 @@
           <div class="bg-white p-6 rounded-3xl shadow-soft border border-stone-200 card-hover transition-all">
             <h2 class="text-lg font-semibold mb-4 flex items-center gap-2"><i data-lucide="pencil" class="w-5 h-5 text-amber-600"></i> Editar / Eliminar</h2>
             <div class="space-y-3">
-              <input id="codigoEditarBalance" placeholder="Código de cuenta" class="w-full rounded-xl border border-stone-300 px-4 py-2.5">
-              <input id="nuevoSaldoBalance" type="number" step="0.01" placeholder="Nuevo saldo (para editar)" class="w-full rounded-xl border border-stone-300 px-4 py-2.5">
+              <label class="text-sm text-stone-500">Cuenta</label>
+              <select id="codigoEditarBalance" class="w-full rounded-xl border border-stone-300 px-4 py-2.5 bg-white">
+                <option value="">Seleccionar cuenta...</option>
+              </select>
+              <input id="nuevoSaldoBalance" type="number" step="0.01" placeholder="Nuevo saldo (solo para editar)" class="w-full rounded-xl border border-stone-300 px-4 py-2.5">
               <div class="flex gap-3">
                 <button onclick="editarSaldo()" class="flex-1 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-medium transition">Editar</button>
                 <button onclick="eliminarSaldo()" class="flex-1 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-medium transition">Eliminar</button>
@@ -408,8 +379,37 @@
           <ul id="listaBalance" class="space-y-2 max-h-96 overflow-y-auto scrollbar-thin"></ul>
         </div>
       `;
-        await listarBalances();
+        await Promise.all([poblarSelectoresBalance(), listarBalances()]);
         lucide.createIcons();
+      }
+
+      async function poblarSelectoresBalance() {
+        try {
+          const res = await fetch(`${API}/cuentas`);
+          if (!res.ok) return;
+          const cuentas = await res.json();
+          cuentas.sort(compararCodigo);
+
+          // Filtrar cuentas hoja: ninguna otra cuenta empieza con este codigo + "."
+          const hojas = cuentas.filter(
+            (c) =>
+              !cuentas.some((otra) => otra.codigo.startsWith(c.codigo + ".")),
+          );
+
+          const select1 = document.getElementById("codigoBalance");
+          const select2 = document.getElementById("codigoEditarBalance");
+          if (!select1 || !select2) return;
+
+          select1.innerHTML = '<option value="">Seleccionar cuenta...</option>';
+          select2.innerHTML = '<option value="">Seleccionar cuenta...</option>';
+          hojas.forEach((c) => {
+            const option = `<option value="${c.codigo}">${c.codigo} - ${c.nombre}</option>`;
+            select1.innerHTML += option;
+            select2.innerHTML += option;
+          });
+        } catch (e) {
+          console.error("Error al poblar selectores de balance", e);
+        }
       }
 
       async function listarBalances() {
@@ -444,10 +444,14 @@
       }
 
       async function guardarSaldo() {
-        const codigo = document.getElementById("codigoBalance").value.trim();
+        const codigo = document.getElementById("codigoBalance").value;
         const saldo = document.getElementById("saldoBalance").value;
         const debeHaber = document.getElementById("debeHaberBalance").value;
-        if (!codigo || !saldo) return showToast("Completá los campos", "error");
+        if (!codigo || !saldo)
+          return showToast(
+            "Seleccioná una cuenta y completá el saldo",
+            "error",
+          );
         try {
           const res = await fetch(`${API}/balance-inicial`, {
             method: "POST",
@@ -460,7 +464,6 @@
           });
           if (!res.ok) throw new Error("Error al guardar");
           showToast("Saldo guardado", "success");
-          document.getElementById("codigoBalance").value = "";
           document.getElementById("saldoBalance").value = "";
           listarBalances();
         } catch (e) {
@@ -469,12 +472,13 @@
       }
 
       async function editarSaldo() {
-        const codigo = document
-          .getElementById("codigoEditarBalance")
-          .value.trim();
+        const codigo = document.getElementById("codigoEditarBalance").value;
         const saldo = document.getElementById("nuevoSaldoBalance").value;
         if (!codigo || !saldo)
-          return showToast("Ingresá código y nuevo saldo", "error");
+          return showToast(
+            "Seleccioná una cuenta e ingresá el nuevo saldo",
+            "error",
+          );
         try {
           const res = await fetch(`${API}/balance-inicial/${codigo}`, {
             method: "PUT",
@@ -483,6 +487,7 @@
           });
           if (!res.ok) throw new Error("Error al editar");
           showToast("Saldo actualizado", "success");
+          document.getElementById("nuevoSaldoBalance").value = "";
           listarBalances();
         } catch (e) {
           showToast(e.message, "error");
@@ -490,11 +495,9 @@
       }
 
       async function eliminarSaldo() {
-        const codigo = document
-          .getElementById("codigoEditarBalance")
-          .value.trim();
-        if (!codigo) return showToast("Ingresá código", "error");
-        if (!confirm("¿Eliminar saldo de la cuenta " + codigo + "?")) return;
+        const codigo = document.getElementById("codigoEditarBalance").value;
+        if (!codigo) return showToast("Seleccioná una cuenta", "error");
+        if (!confirm(`¿Eliminar saldo de la cuenta ${codigo}?`)) return;
         try {
           const res = await fetch(`${API}/balance-inicial/${codigo}`, {
             method: "DELETE",
@@ -507,7 +510,8 @@
         }
       }
 
-      // ===================== 3. LIBRO DIARIO =====================
+      // ===================== LIBRO DIARIO =====================
+      // ... (mantenido igual que antes, sin cambios)
       async function cargarLibroDiario() {
         const cont = document.getElementById("contenido");
         cont.innerHTML = `
@@ -573,6 +577,7 @@
         lucide.createIcons();
       }
 
+      // ... (funciones del libro diario sin cambios)
       function agregarLineaDiario() {
         const container = document.getElementById("lineasDiarioContainer");
         const div = document.createElement("div");
@@ -762,10 +767,9 @@
       // ===================== INICIALIZACIÓN =====================
       window.addEventListener("load", () => {
         lucide.createIcons();
-        mostrarModulo("plan"); // módulo por defecto
+        mostrarModulo("plan");
       });
 
-      // Cerrar sidebar al hacer clic fuera en móvil (opcional)
       window.addEventListener("resize", () => {
         if (window.innerWidth >= 1024) {
           document
