@@ -6,7 +6,6 @@
     <title>Librería El Estudiante · Sistema Contable</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Fuente serif para encabezados -->
     <link
       href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&display=swap"
       rel="stylesheet"
@@ -69,7 +68,7 @@
         .no-print,
         #sidebar,
         #sidebarOverlay,
-        .lg:hidden,
+        .lg\\:hidden,
         button,
         nav,
         aside,
@@ -186,7 +185,6 @@
             Librería El Estudiante
           </h1>
         </div>
-
         <div id="contenido" class="max-w-6xl mx-auto space-y-8"></div>
       </main>
     </div>
@@ -278,7 +276,7 @@
         }
       }
 
-      // ============ PLAN DE CUENTAS (con botón imprimir) ============
+      // ===================== PLAN DE CUENTAS =====================
       async function cargarPlanCuentas() {
         const cont = document.getElementById("contenido");
         cont.innerHTML = `
@@ -322,7 +320,6 @@
         lucide.createIcons();
       }
 
-      // (Mantener funciones listarCuentas, guardarCuenta, etc. igual que antes)
       async function listarCuentas() {
         const lista = document.getElementById("listaPlan");
         lista.innerHTML =
@@ -357,6 +354,7 @@
           lista.innerHTML = `<li class="text-rose-500 p-4">Error al cargar cuentas: ${e.message}</li>`;
         }
       }
+
       async function guardarCuenta() {
         const codigo = document.getElementById("codigoPlan").value.trim();
         const nombre = document.getElementById("nombrePlan").value.trim();
@@ -380,6 +378,7 @@
           showToast(e.message, "error");
         }
       }
+
       async function eliminarCuentaPorCodigo(codigo) {
         if (!confirm(`¿Eliminar la cuenta ${codigo}?`)) return;
         try {
@@ -393,6 +392,7 @@
           showToast(e.message, "error");
         }
       }
+
       async function eliminarCuenta() {
         const codigo = document
           .getElementById("codigoEliminarPlan")
@@ -402,8 +402,7 @@
         document.getElementById("codigoEliminarPlan").value = "";
       }
 
-      // ============ BALANCE INICIAL (con imprimir) ============
-      // (Similar, se agrega botón imprimir)
+      // ===================== BALANCE INICIAL =====================
       async function cargarBalance() {
         const cont = document.getElementById("contenido");
         cont.innerHTML = `
@@ -421,9 +420,37 @@
             </button>
           </div>
         </div>
-        <!-- Tarjetas igual que antes, luego lista de saldos -->
         <div class="grid md:grid-cols-2 gap-6 mb-8 no-print">
-          <!-- ... (mismo contenido) ... -->
+          <div class="bg-white p-6 rounded-3xl shadow-soft border border-stone-200 card-hover transition-all">
+            <h2 class="text-lg font-semibold mb-4 flex items-center gap-2"><i data-lucide="wallet" class="w-5 h-5 text-emerald-600"></i> Agregar/Editar saldo</h2>
+            <div class="space-y-3">
+              <label class="text-sm text-stone-500">Cuenta</label>
+              <select id="codigoBalance" class="w-full rounded-xl border border-stone-300 px-4 py-2.5 bg-white">
+                <option value="">Seleccionar cuenta...</option>
+              </select>
+              <input id="saldoBalance" type="number" step="0.01" placeholder="Saldo" class="w-full rounded-xl border border-stone-300 px-4 py-2.5">
+              <select id="debeHaberBalance" class="w-full rounded-xl border border-stone-300 px-4 py-2.5 bg-white">
+                <option value="DEBE">DEBE</option>
+                <option value="HABER">HABER</option>
+              </select>
+              <button onclick="guardarSaldo()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium transition shadow-md">
+                Guardar saldo
+              </button>
+            </div>
+          </div>
+          <div class="bg-white p-6 rounded-3xl shadow-soft border border-stone-200 card-hover transition-all">
+            <h2 class="text-lg font-semibold mb-4 flex items-center gap-2"><i data-lucide="pencil" class="w-5 h-5 text-amber-600"></i> Editar saldo</h2>
+            <div class="space-y-3">
+              <label class="text-sm text-stone-500">Cuenta</label>
+              <select id="codigoEditarBalance" class="w-full rounded-xl border border-stone-300 px-4 py-2.5 bg-white">
+                <option value="">Seleccionar cuenta...</option>
+              </select>
+              <input id="nuevoSaldoBalance" type="number" step="0.01" placeholder="Nuevo saldo" class="w-full rounded-xl border border-stone-300 px-4 py-2.5">
+              <button onclick="editarSaldo()" class="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-medium transition">
+                Editar saldo
+              </button>
+            </div>
+          </div>
         </div>
         <div class="bg-white rounded-3xl shadow-soft border border-stone-200 p-6 print-area">
           <h2 class="text-xl font-semibold mb-4 flex items-center gap-2"><i data-lucide="list" class="w-5 h-5 text-amber-600"></i> Saldos iniciales (≠ 0)</h2>
@@ -433,15 +460,517 @@
         await Promise.all([poblarSelectoresBalance(), listarBalances()]);
         lucide.createIcons();
       }
-      // ... (resto de funciones de balance igual que antes)
 
-      // ============ LIBRO DIARIO (con imprimir) ============
-      async function cargarLibroDiario() {
-        // Similar, agregar botón imprimir en la cabecera
-        // ...
+      async function poblarSelectoresBalance() {
+        try {
+          const res = await fetch(`${API}/cuentas`);
+          if (!res.ok) return;
+          const cuentas = await res.json();
+          cuentas.sort(compararCodigo);
+          const hojas = cuentas.filter(
+            (c) =>
+              !cuentas.some((otra) => otra.codigo.startsWith(c.codigo + ".")),
+          );
+          const select1 = document.getElementById("codigoBalance");
+          const select2 = document.getElementById("codigoEditarBalance");
+          if (!select1 || !select2) return;
+          select1.innerHTML = '<option value="">Seleccionar cuenta...</option>';
+          select2.innerHTML = '<option value="">Seleccionar cuenta...</option>';
+          hojas.forEach((c) => {
+            const option = `<option value="${c.codigo}">${c.codigo} - ${c.nombre}</option>`;
+            select1.innerHTML += option;
+            select2.innerHTML += option;
+          });
+        } catch (e) {
+          console.error("Error al poblar selectores de balance", e);
+        }
       }
 
-      // ============ LIBRO MAYOR ============
+      async function listarBalances() {
+        const lista = document.getElementById("listaBalance");
+        lista.innerHTML =
+          '<li class="text-stone-400 italic p-4 text-center">Cargando...</li>';
+        try {
+          const res = await fetch(`${API}/balance-inicial`);
+          if (!res.ok) throw new Error("Error al cargar");
+          const balances = await res.json();
+          lista.innerHTML = "";
+          if (!balances.length) {
+            lista.innerHTML =
+              '<li class="text-stone-400 italic p-4 text-center">No hay saldos iniciales (con saldo ≠ 0).</li>';
+            return;
+          }
+          balances.forEach((b) => {
+            lista.innerHTML += `
+            <li class="flex flex-col sm:flex-row sm:items-center justify-between bg-stone-50 p-3 rounded-xl border border-stone-100 gap-2">
+              <div>
+                <span class="font-mono font-semibold text-amber-900">${b.codigo}</span>
+                <span class="text-stone-600 ml-2">${b.nombre}</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="font-mono text-sm px-3 py-1 rounded-full ${b.debe_haber === "DEBE" ? "bg-blue-100 text-blue-800" : "bg-rose-100 text-rose-800"}">
+                  ${b.debe_haber} $${b.saldo}
+                </span>
+                <button onclick="eliminarSaldoDirecto('${b.codigo}')" class="text-rose-500 hover:text-rose-700 p-1 no-print" title="Eliminar saldo">
+                  <i data-lucide="trash-2" class="w-5 h-5"></i>
+                </button>
+              </div>
+            </li>`;
+          });
+          lucide.createIcons();
+        } catch (e) {
+          lista.innerHTML = `<li class="text-rose-500 p-4">Error al cargar saldos.</li>`;
+        }
+      }
+
+      async function guardarSaldo() {
+        const codigo = document.getElementById("codigoBalance").value;
+        const saldo = document.getElementById("saldoBalance").value;
+        const debeHaber = document.getElementById("debeHaberBalance").value;
+        if (!codigo || !saldo)
+          return showToast(
+            "Seleccioná una cuenta y completá el saldo",
+            "error",
+          );
+        try {
+          await fetch(`${API}/balance-inicial`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              codigo,
+              saldo: parseFloat(saldo),
+              debe_haber: debeHaber,
+            }),
+          });
+          showToast("Saldo guardado", "success");
+          document.getElementById("saldoBalance").value = "";
+          listarBalances();
+        } catch (e) {
+          showToast(e.message, "error");
+        }
+      }
+
+      async function editarSaldo() {
+        const codigo = document.getElementById("codigoEditarBalance").value;
+        const saldo = document.getElementById("nuevoSaldoBalance").value;
+        if (!codigo || !saldo)
+          return showToast(
+            "Seleccioná una cuenta e ingresá el nuevo saldo",
+            "error",
+          );
+        try {
+          await fetch(`${API}/balance-inicial/${codigo}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ saldo: parseFloat(saldo) }),
+          });
+          showToast("Saldo actualizado", "success");
+          document.getElementById("nuevoSaldoBalance").value = "";
+          listarBalances();
+        } catch (e) {
+          showToast(e.message, "error");
+        }
+      }
+
+      async function eliminarSaldoDirecto(codigo) {
+        if (!confirm(`¿Eliminar saldo de la cuenta ${codigo}?`)) return;
+        try {
+          await fetch(`${API}/balance-inicial/${codigo}`, { method: "DELETE" });
+          showToast("Saldo eliminado", "success");
+          listarBalances();
+        } catch (e) {
+          showToast(e.message, "error");
+        }
+      }
+
+      // ===================== LIBRO DIARIO =====================
+      async function cargarLibroDiario() {
+        const cont = document.getElementById("contenido");
+        cont.innerHTML = `
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 print-area">
+          <div>
+            <h1 class="text-3xl font-bold text-stone-800 font-serif">Libro Diario</h1>
+            <p class="text-stone-500">Asientos contables con folio por línea</p>
+          </div>
+          <div class="flex gap-3 no-print">
+            <button onclick="cargarLibroDiario()" class="px-4 py-2 bg-white border border-stone-300 hover:bg-stone-50 text-stone-700 rounded-xl transition flex items-center gap-2 shadow-sm">
+              <i data-lucide="refresh-cw" class="w-4 h-4"></i> Actualizar
+            </button>
+            <button onclick="window.print()" class="px-4 py-2 bg-stone-700 text-white rounded-xl hover:bg-stone-800 flex items-center gap-2 shadow-sm">
+              <i data-lucide="printer" class="w-4 h-4"></i> Imprimir
+            </button>
+          </div>
+        </div>
+        <div class="grid md:grid-cols-2 gap-6 mb-8 no-print">
+          <div class="bg-white p-6 rounded-3xl shadow-soft border border-stone-200 card-hover transition-all">
+            <h2 class="text-lg font-semibold mb-4 flex items-center gap-2"><i data-lucide="file-plus" class="w-5 h-5 text-emerald-600"></i> Nuevo asiento</h2>
+            <div class="space-y-3">
+              <input type="date" id="fechaDiario" class="w-full rounded-xl border border-stone-300 px-4 py-2.5">
+              <input id="glosaDiario" placeholder="Glosa" class="w-full rounded-xl border border-stone-300 px-4 py-2.5">
+              <div id="lineasDiarioContainer" class="space-y-2">
+                <div class="linea flex flex-wrap sm:flex-nowrap gap-2 items-center">
+                  <select class="select-codigo-diario w-full sm:w-1/3 rounded-xl border border-stone-300 px-2 py-2 bg-white">
+                    <option value="">Seleccionar cuenta...</option>
+                  </select>
+                  <input type="text" placeholder="Folio" class="folioDiario w-16 rounded-xl border border-stone-300 px-2 py-2 text-center">
+                  <select class="debeHaberDiario w-full sm:w-1/4 rounded-xl border border-stone-300 px-2 py-2 bg-white">
+                    <option value="DEBE">DEBE</option>
+                    <option value="HABER">HABER</option>
+                  </select>
+                  <input type="number" step="0.01" placeholder="Monto" class="montoDiario w-full sm:w-1/3 rounded-xl border border-stone-300 px-3 py-2">
+                  <button onclick="this.parentElement.remove()" class="text-rose-500 hover:text-rose-700 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                </div>
+              </div>
+              <button onclick="agregarLineaDiario()" class="text-sm text-amber-700 hover:underline flex items-center gap-1"><i data-lucide="plus" class="w-3 h-3"></i> Agregar línea</button>
+              <button onclick="registrarAsientoDiario()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium transition shadow-md">
+                Registrar asiento
+              </button>
+            </div>
+          </div>
+          <div class="bg-white p-6 rounded-3xl shadow-soft border border-stone-200 card-hover transition-all">
+            <h2 class="text-lg font-semibold mb-4 flex items-center gap-2"><i data-lucide="folder-edit" class="w-5 h-5 text-amber-600"></i> Editar / Eliminar</h2>
+            <div class="space-y-3">
+              <input type="number" id="idEditarDiario" placeholder="ID del asiento" class="w-full rounded-xl border border-stone-300 px-4 py-2.5">
+              <div class="flex gap-3">
+                <button onclick="cargarAsientoEditarDiario()" class="flex-1 py-2 bg-sky-100 text-sky-800 rounded-xl hover:bg-sky-200 font-medium">Editar</button>
+                <button onclick="eliminarAsientoDiario()" class="flex-1 py-2 bg-rose-100 text-rose-800 rounded-xl hover:bg-rose-200 font-medium">Eliminar</button>
+              </div>
+              <div id="editorDiario" class="hidden space-y-3 mt-3">
+                <input type="date" id="editFechaDiario" class="w-full rounded-xl border border-stone-300 px-4 py-2.5">
+                <input id="editGlosaDiario" placeholder="Glosa" class="w-full rounded-xl border border-stone-300 px-4 py-2.5">
+                <div id="editLineasDiarioContainer" class="space-y-2"></div>
+                <button onclick="agregarLineaEditarDiario()" class="text-sm text-amber-700 hover:underline flex items-center gap-1"><i data-lucide="plus" class="w-3 h-3"></i> Agregar línea</button>
+                <button onclick="guardarEdicionDiario()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium">Guardar cambios</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="listaAsientosDiario" class="space-y-6 print-area"></div>
+      `;
+        await Promise.all([poblarSelectoresDiario(), listarAsientosDiario()]);
+        lucide.createIcons();
+      }
+
+      async function poblarSelectoresDiario() {
+        try {
+          const res = await fetch(`${API}/cuentas`);
+          if (!res.ok) return;
+          const cuentas = await res.json();
+          cuentas.sort(compararCodigo);
+          const selects = document.querySelectorAll(
+            "select.select-codigo-diario",
+          );
+          selects.forEach((select) => {
+            const currentValue = select.value;
+            select.innerHTML =
+              '<option value="">Seleccionar cuenta...</option>';
+            cuentas.forEach((c) => {
+              select.innerHTML += `<option value="${c.codigo}">${c.nombre}</option>`;
+            });
+            if (currentValue) select.value = currentValue;
+          });
+        } catch (e) {
+          console.error("Error al poblar selectores del diario", e);
+        }
+      }
+
+      function agregarLineaDiario() {
+        const container = document.getElementById("lineasDiarioContainer");
+        const div = document.createElement("div");
+        div.className =
+          "linea flex flex-wrap sm:flex-nowrap gap-2 items-center";
+        div.innerHTML = `
+        <select class="select-codigo-diario w-full sm:w-1/3 rounded-xl border border-stone-300 px-2 py-2 bg-white">
+          <option value="">Seleccionar cuenta...</option>
+        </select>
+        <input type="text" placeholder="Folio" class="folioDiario w-16 rounded-xl border border-stone-300 px-2 py-2 text-center">
+        <select class="debeHaberDiario w-full sm:w-1/4 rounded-xl border border-stone-300 px-2 py-2 bg-white">
+          <option value="DEBE">DEBE</option>
+          <option value="HABER">HABER</option>
+        </select>
+        <input type="number" step="0.01" placeholder="Monto" class="montoDiario w-full sm:w-1/3 rounded-xl border border-stone-300 px-3 py-2">
+        <button onclick="this.parentElement.remove()" class="text-rose-500 hover:text-rose-700 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`;
+        container.appendChild(div);
+        poblarSelectoresDiario();
+        lucide.createIcons();
+      }
+
+      async function registrarAsientoDiario() {
+        const fecha = document.getElementById("fechaDiario").value;
+        const glosa = document.getElementById("glosaDiario").value.trim();
+        if (!fecha || !glosa)
+          return showToast("Completá fecha y glosa", "error");
+        const lineas = [];
+        document.querySelectorAll(".linea").forEach((el) => {
+          const codigo = el.querySelector(".select-codigo-diario").value;
+          const folio = el.querySelector(".folioDiario").value.trim();
+          const debeHaber = el.querySelector(".debeHaberDiario").value;
+          const monto = parseFloat(el.querySelector(".montoDiario").value);
+          if (codigo && !isNaN(monto)) {
+            lineas.push({ codigo, folio, debe_haber: debeHaber, monto });
+          }
+        });
+        if (lineas.length < 2) return showToast("Mínimo dos líneas", "error");
+        try {
+          const res = await fetch(`${API}/asientos`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ fecha, glosa, lineas }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || "Error al registrar");
+
+          mostrarDetalleAsiento(data);
+          showToast("Asiento registrado correctamente", "success");
+          document.getElementById("fechaDiario").value = "";
+          document.getElementById("glosaDiario").value = "";
+          document.getElementById("lineasDiarioContainer").innerHTML = `
+          <div class="linea flex flex-wrap sm:flex-nowrap gap-2 items-center">
+            <select class="select-codigo-diario w-full sm:w-1/3 rounded-xl border border-stone-300 px-2 py-2 bg-white">
+              <option value="">Seleccionar cuenta...</option>
+            </select>
+            <input type="text" placeholder="Folio" class="folioDiario w-16 rounded-xl border border-stone-300 px-2 py-2 text-center">
+            <select class="debeHaberDiario w-full sm:w-1/4 rounded-xl border border-stone-300 px-2 py-2 bg-white">
+              <option value="DEBE">DEBE</option>
+              <option value="HABER">HABER</option>
+            </select>
+            <input type="number" step="0.01" placeholder="Monto" class="montoDiario w-full sm:w-1/3 rounded-xl border border-stone-300 px-3 py-2">
+            <button onclick="this.parentElement.remove()" class="text-rose-500 hover:text-rose-700 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+          </div>`;
+          poblarSelectoresDiario();
+          lucide.createIcons();
+          listarAsientosDiario();
+        } catch (e) {
+          showToast(e.message, "error");
+        }
+      }
+
+      function mostrarDetalleAsiento(asiento) {
+        let lineasHtml = "";
+        let totalDebe = 0,
+          totalHaber = 0;
+        asiento.lineas.forEach((l) => {
+          totalDebe += l.debe_haber === "DEBE" ? l.monto : 0;
+          totalHaber += l.debe_haber === "HABER" ? l.monto : 0;
+          lineasHtml += `
+          <tr class="border-b border-stone-200">
+            <td class="py-2 px-4">${l.nombre}</td>
+            <td class="py-2 px-4 text-center">${l.folio || "-"}</td>
+            <td class="py-2 px-4 text-right font-mono">${l.debe_haber === "DEBE" ? l.monto.toFixed(2) : ""}</td>
+            <td class="py-2 px-4 text-right font-mono">${l.debe_haber === "HABER" ? l.monto.toFixed(2) : ""}</td>
+          </tr>`;
+        });
+        const tabla = `
+        <div class="bg-white rounded-3xl shadow-soft border border-stone-200 p-6 mb-6">
+          <div class="flex justify-between items-start mb-4">
+            <div>
+              <h3 class="text-xl font-bold text-stone-800">Asiento registrado</h3>
+              <p class="text-sm text-stone-500">${asiento.fecha} - ${asiento.glosa}</p>
+            </div>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="border-b-2 border-stone-300">
+                <tr>
+                  <th class="py-2 px-4 text-left">Cuenta</th>
+                  <th class="py-2 px-4 text-center">Folio</th>
+                  <th class="py-2 px-4 text-right">Debe</th>
+                  <th class="py-2 px-4 text-right">Haber</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${lineasHtml}
+                <tr class="font-semibold border-t-2 border-stone-300">
+                  <td class="py-2 px-4" colspan="2">Total</td>
+                  <td class="py-2 px-4 text-right">${totalDebe.toFixed(2)}</td>
+                  <td class="py-2 px-4 text-right">${totalHaber.toFixed(2)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          ${totalDebe === totalHaber ? '<p class="mt-3 text-emerald-600 font-medium flex items-center gap-1"><i data-lucide="check-circle" class="w-4 h-4"></i> Total Debe = Total Haber</p>' : ""}
+        </div>`;
+        document
+          .getElementById("listaAsientosDiario")
+          .insertAdjacentHTML("afterbegin", tabla);
+        lucide.createIcons();
+      }
+
+      async function listarAsientosDiario() {
+        const lista = document.getElementById("listaAsientosDiario");
+        lista.innerHTML =
+          '<p class="text-stone-400 italic p-4 text-center">Cargando...</p>';
+        try {
+          const res = await fetch(`${API}/asientos`);
+          if (!res.ok) throw new Error("Error al cargar");
+          const asientos = await res.json();
+          lista.innerHTML = "";
+          if (!asientos.length) {
+            lista.innerHTML =
+              '<p class="text-stone-400 italic p-4 text-center">No hay asientos registrados.</p>';
+            return;
+          }
+          asientos.forEach((a) => {
+            let lineasHtml = "";
+            let totalDebe = 0,
+              totalHaber = 0;
+            a.lineas.forEach((l) => {
+              totalDebe += l.debe_haber === "DEBE" ? l.monto : 0;
+              totalHaber += l.debe_haber === "HABER" ? l.monto : 0;
+              lineasHtml += `
+              <tr class="border-b border-stone-200">
+                <td class="py-2 px-4">${l.nombre}</td>
+                <td class="py-2 px-4 text-center">${l.folio || "-"}</td>
+                <td class="py-2 px-4 text-right font-mono">${l.debe_haber === "DEBE" ? l.monto.toFixed(2) : ""}</td>
+                <td class="py-2 px-4 text-right font-mono">${l.debe_haber === "HABER" ? l.monto.toFixed(2) : ""}</td>
+              </tr>`;
+            });
+            const tarjeta = `
+            <div class="bg-white rounded-3xl shadow-soft border border-stone-200 p-6">
+              <div class="flex flex-col sm:flex-row justify-between items-start mb-4 gap-2">
+                <div>
+                  <h3 class="font-bold text-amber-900 text-lg">Asiento #${a.id_asiento}</h3>
+                  <p class="text-stone-600 text-sm">${a.fecha} - ${a.glosa}</p>
+                </div>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead class="border-b-2 border-stone-300">
+                    <tr>
+                      <th class="py-2 px-4 text-left">Cuenta</th>
+                      <th class="py-2 px-4 text-center">Folio</th>
+                      <th class="py-2 px-4 text-right">Debe</th>
+                      <th class="py-2 px-4 text-right">Haber</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${lineasHtml}
+                    <tr class="font-semibold border-t-2 border-stone-300">
+                      <td class="py-2 px-4" colspan="2">Total</td>
+                      <td class="py-2 px-4 text-right">${totalDebe.toFixed(2)}</td>
+                      <td class="py-2 px-4 text-right">${totalHaber.toFixed(2)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              ${totalDebe === totalHaber ? '<p class="mt-2 text-emerald-600 text-xs font-medium flex items-center gap-1"><i data-lucide="check-circle" class="w-3 h-3"></i> Cuadrado</p>' : '<p class="mt-2 text-rose-600 text-xs font-medium">No cuadrado</p>'}
+            </div>`;
+            lista.innerHTML += tarjeta;
+          });
+          lucide.createIcons();
+        } catch (e) {
+          lista.innerHTML = `<p class="text-rose-500 p-4">Error al cargar asientos.</p>`;
+        }
+      }
+
+      async function cargarAsientoEditarDiario() {
+        const id = document.getElementById("idEditarDiario").value;
+        if (!id) return showToast("Ingresá ID", "error");
+        try {
+          const res = await fetch(`${API}/asientos`);
+          const asientos = await res.json();
+          const asiento = asientos.find((a) => a.id_asiento == id);
+          if (!asiento) return showToast("Asiento no encontrado", "error");
+          document.getElementById("editFechaDiario").value = asiento.fecha;
+          document.getElementById("editGlosaDiario").value = asiento.glosa;
+          const cont = document.getElementById("editLineasDiarioContainer");
+          cont.innerHTML = "";
+          asiento.lineas.forEach((l) => {
+            cont.innerHTML += `
+            <div class="linea-edit flex flex-wrap sm:flex-nowrap gap-2 items-center">
+              <select class="select-codigo-diario w-full sm:w-1/3 rounded-xl border border-stone-300 px-2 py-2 bg-white">
+                <option value="">Seleccionar cuenta...</option>
+              </select>
+              <input type="text" placeholder="Folio" class="folioEdit w-16 rounded-xl border border-stone-300 px-2 py-2 text-center" value="${l.folio || ""}">
+              <select class="debeHaberEdit w-full sm:w-1/4 rounded-xl border border-stone-300 px-2 py-2 bg-white">
+                <option value="DEBE" ${l.debe_haber === "DEBE" ? "selected" : ""}>DEBE</option>
+                <option value="HABER" ${l.debe_haber === "HABER" ? "selected" : ""}>HABER</option>
+              </select>
+              <input type="number" step="0.01" class="montoEdit w-full sm:w-1/3 rounded-xl border border-stone-300 px-3 py-2" value="${l.monto}">
+              <button onclick="this.parentElement.remove()" class="text-rose-500 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            </div>`;
+          });
+          document.getElementById("editorDiario").classList.remove("hidden");
+          await poblarSelectoresDiario();
+          document.querySelectorAll(".linea-edit").forEach((el, idx) => {
+            if (asiento.lineas[idx]) {
+              el.querySelector(".select-codigo-diario").value =
+                asiento.lineas[idx].codigo;
+            }
+          });
+          lucide.createIcons();
+        } catch (e) {
+          showToast(e.message, "error");
+        }
+      }
+
+      function agregarLineaEditarDiario() {
+        const cont = document.getElementById("editLineasDiarioContainer");
+        const div = document.createElement("div");
+        div.className =
+          "linea-edit flex flex-wrap sm:flex-nowrap gap-2 items-center";
+        div.innerHTML = `
+        <select class="select-codigo-diario w-full sm:w-1/3 rounded-xl border border-stone-300 px-2 py-2 bg-white">
+          <option value="">Seleccionar cuenta...</option>
+        </select>
+        <input type="text" placeholder="Folio" class="folioEdit w-16 rounded-xl border border-stone-300 px-2 py-2 text-center">
+        <select class="debeHaberEdit w-full sm:w-1/4 rounded-xl border border-stone-300 px-2 py-2 bg-white">
+          <option value="DEBE">DEBE</option>
+          <option value="HABER">HABER</option>
+        </select>
+        <input type="number" step="0.01" placeholder="Monto" class="montoEdit w-full sm:w-1/3 rounded-xl border border-stone-300 px-3 py-2">
+        <button onclick="this.parentElement.remove()" class="text-rose-500 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`;
+        cont.appendChild(div);
+        poblarSelectoresDiario();
+        lucide.createIcons();
+      }
+
+      async function guardarEdicionDiario() {
+        const id = document.getElementById("idEditarDiario").value;
+        const fecha = document.getElementById("editFechaDiario").value;
+        const glosa = document.getElementById("editGlosaDiario").value.trim();
+        if (!fecha || !glosa)
+          return showToast("Completá fecha y glosa", "error");
+        const lineas = [];
+        document.querySelectorAll(".linea-edit").forEach((el) => {
+          const codigo = el.querySelector(".select-codigo-diario").value;
+          const folio = el.querySelector(".folioEdit").value.trim();
+          const debeHaber = el.querySelector(".debeHaberEdit").value;
+          const monto = parseFloat(el.querySelector(".montoEdit").value);
+          if (codigo && !isNaN(monto)) {
+            lineas.push({ codigo, folio, debe_haber: debeHaber, monto });
+          }
+        });
+        try {
+          const res = await fetch(`${API}/asientos/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ fecha, glosa, lineas }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || "Error al actualizar");
+          showToast("Asiento actualizado correctamente", "success");
+          document.getElementById("editorDiario").classList.add("hidden");
+          listarAsientosDiario();
+        } catch (e) {
+          showToast(e.message, "error");
+        }
+      }
+
+      async function eliminarAsientoDiario() {
+        const id = document.getElementById("idEditarDiario").value;
+        if (!id) return showToast("Ingresá ID", "error");
+        if (!confirm("¿Eliminar asiento #" + id + "?")) return;
+        try {
+          await fetch(`${API}/asientos/${id}`, { method: "DELETE" });
+          showToast("Asiento eliminado", "success");
+          listarAsientosDiario();
+        } catch (e) {
+          showToast(e.message, "error");
+        }
+      }
+
+      // ===================== LIBRO MAYOR =====================
       async function cargarLibroMayor() {
         const cont = document.getElementById("contenido");
         cont.innerHTML = `
@@ -465,9 +994,8 @@
             <option value="">-- Elija una cuenta --</option>
           </select>
         </div>
-        <div id="contenidoMayor" class="space-y-6"></div>
+        <div id="contenidoMayor" class="space-y-6 print-area"></div>
       `;
-        // Cargar lista de cuentas con movimientos
         try {
           const res = await fetch(`${API}/libro-mayor/cuentas`);
           if (!res.ok) throw new Error("Error al cargar cuentas");
@@ -492,7 +1020,7 @@
           if (!res.ok) throw new Error("Error al obtener mayor");
           const data = await res.json();
           let html = `
-          <div class="bg-white rounded-3xl shadow-soft border border-stone-200 p-6 print-area">
+          <div class="bg-white rounded-3xl shadow-soft border border-stone-200 p-6">
             <h2 class="text-2xl font-bold font-serif mb-4">${data.codigo} - ${data.nombre}</h2>
             <p class="text-sm text-stone-600 mb-4">Saldo inicial: <span class="font-mono font-semibold">${data.saldo_inicial.toFixed(2)}</span></p>
             <div class="overflow-x-auto">
@@ -532,7 +1060,7 @@
         }
       }
 
-      // ============ BALANCE DE COMPROBACIÓN ============
+      // ===================== BALANCE DE COMPROBACIÓN =====================
       async function cargarBalanceComprobacion() {
         const cont = document.getElementById("contenido");
         cont.innerHTML = `
@@ -601,10 +1129,9 @@
           document.getElementById("tablaComprobacion").innerHTML =
             `<p class="text-rose-500">${e.message}</p>`;
         }
-        lucide.createIcons();
       }
 
-      // Inicialización
+      // ===================== INICIALIZACIÓN =====================
       window.addEventListener("load", () => {
         lucide.createIcons();
         mostrarModulo("plan");
