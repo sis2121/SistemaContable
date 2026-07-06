@@ -111,7 +111,7 @@
           class="mt-auto pt-6 border-t border-white/20 text-xs text-amber-200/60 flex items-center gap-2"
         >
           <i data-lucide="settings" class="w-4 h-4"></i>
-          v3.0 · El Estudiante
+          v3.1 · El Estudiante
         </div>
       </aside>
 
@@ -235,7 +235,7 @@
             </div>
           </div>
           <div class="bg-white p-6 rounded-3xl shadow-soft border border-stone-200 card-hover transition-all">
-            <h2 class="text-lg font-semibold text-stone-700 mb-4 flex items-center gap-2"><i data-lucide="trash-2" class="w-5 h-5 text-rose-600"></i> Eliminar cuenta</h2>
+            <h2 class="text-lg font-semibold text-stone-700 mb-4 flex items-center gap-2"><i data-lucide="trash-2" class="w-5 h-5 text-rose-600"></i> Eliminar por código</h2>
             <div class="space-y-3">
               <input id="codigoEliminarPlan" placeholder="Código exacto a eliminar" class="w-full rounded-xl border border-stone-300 px-4 py-2.5 focus:border-rose-500 outline-none transition">
               <button onclick="eliminarCuenta()" class="w-full py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-medium transition shadow-md">Eliminar cuenta</button>
@@ -269,13 +269,13 @@
           cuentas.forEach((c) => {
             const nivel = c.codigo.split(".").length - 1;
             lista.innerHTML += `
-            <li class="flex items-center justify-between bg-stone-50 p-3 rounded-xl border border-stone-100 hover:bg-amber-50/50 transition group"
+            <li class="flex items-center justify-between bg-stone-50 p-3 rounded-xl border border-stone-100 hover:bg-amber-50/50 transition"
                 style="padding-left:${nivel * 1.5}rem;">
               <div class="flex items-center gap-3">
                 <span class="font-mono font-semibold text-amber-900 bg-amber-100 px-2 py-1 rounded-lg text-sm">${c.codigo}</span>
                 <span class="text-stone-700">${c.nombre}</span>
               </div>
-              <button onclick="eliminarCuentaPorCodigo('${c.codigo}')" class="text-stone-400 hover:text-rose-500 transition p-1 opacity-0 group-hover:opacity-100">
+              <button onclick="eliminarCuentaPorCodigo('${c.codigo}')" class="text-rose-500 hover:text-rose-700 transition p-1">
                 <i data-lucide="x-circle" class="w-5 h-5"></i>
               </button>
             </li>`;
@@ -366,18 +366,18 @@
             </div>
           </div>
 
+          <!-- Solo Editar (sin Eliminar) -->
           <div class="bg-white p-6 rounded-3xl shadow-soft border border-stone-200 card-hover transition-all">
-            <h2 class="text-lg font-semibold mb-4 flex items-center gap-2"><i data-lucide="pencil" class="w-5 h-5 text-amber-600"></i> Editar / Eliminar</h2>
+            <h2 class="text-lg font-semibold mb-4 flex items-center gap-2"><i data-lucide="pencil" class="w-5 h-5 text-amber-600"></i> Editar saldo</h2>
             <div class="space-y-3">
               <label class="text-sm text-stone-500">Cuenta</label>
               <select id="codigoEditarBalance" class="w-full rounded-xl border border-stone-300 px-4 py-2.5 bg-white">
                 <option value="">Seleccionar cuenta...</option>
               </select>
-              <input id="nuevoSaldoBalance" type="number" step="0.01" placeholder="Nuevo saldo (solo para editar)" class="w-full rounded-xl border border-stone-300 px-4 py-2.5">
-              <div class="flex gap-3">
-                <button onclick="editarSaldo()" class="flex-1 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-medium transition">Editar</button>
-                <button onclick="eliminarSaldo()" class="flex-1 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-medium transition">Eliminar</button>
-              </div>
+              <input id="nuevoSaldoBalance" type="number" step="0.01" placeholder="Nuevo saldo" class="w-full rounded-xl border border-stone-300 px-4 py-2.5">
+              <button onclick="editarSaldo()" class="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-medium transition">
+                Editar saldo
+              </button>
             </div>
           </div>
         </div>
@@ -440,11 +440,17 @@
                 <span class="font-mono font-semibold text-amber-900">${b.codigo}</span>
                 <span class="text-stone-600 ml-2">${b.nombre}</span>
               </div>
-              <span class="font-mono text-sm px-3 py-1 rounded-full ${b.debe_haber === "DEBE" ? "bg-blue-100 text-blue-800" : "bg-rose-100 text-rose-800"} self-start sm:self-center">
-                ${b.debe_haber} $${b.saldo}
-              </span>
+              <div class="flex items-center gap-3">
+                <span class="font-mono text-sm px-3 py-1 rounded-full ${b.debe_haber === "DEBE" ? "bg-blue-100 text-blue-800" : "bg-rose-100 text-rose-800"}">
+                  ${b.debe_haber} $${b.saldo}
+                </span>
+                <button onclick="eliminarSaldoDirecto('${b.codigo}')" class="text-rose-500 hover:text-rose-700 p-1" title="Eliminar saldo">
+                  <i data-lucide="trash-2" class="w-5 h-5"></i>
+                </button>
+              </div>
             </li>`;
           });
+          lucide.createIcons();
         } catch (e) {
           lista.innerHTML = `<li class="text-rose-500 p-4">Error al cargar saldos.</li>`;
         }
@@ -501,9 +507,8 @@
         }
       }
 
-      async function eliminarSaldo() {
-        const codigo = document.getElementById("codigoEditarBalance").value;
-        if (!codigo) return showToast("Seleccioná una cuenta", "error");
+      // Nueva función para eliminar directamente desde el botón en la lista
+      async function eliminarSaldoDirecto(codigo) {
         if (!confirm(`¿Eliminar saldo de la cuenta ${codigo}?`)) return;
         try {
           const res = await fetch(`${API}/balance-inicial/${codigo}`, {
@@ -515,6 +520,14 @@
         } catch (e) {
           showToast(e.message, "error");
         }
+      }
+
+      // Mantenemos la función anterior por si se usa desde otro lugar, pero ya no se llama desde la tarjeta
+      async function eliminarSaldo() {
+        // Esta función ya no se usa porque quitamos el botón, pero la dejamos por compatibilidad
+        const codigo = document.getElementById("codigoEditarBalance").value;
+        if (!codigo) return showToast("Seleccioná una cuenta", "error");
+        await eliminarSaldoDirecto(codigo);
       }
 
       // ===================== LIBRO DIARIO =====================
@@ -563,7 +576,7 @@
             <div class="space-y-3">
               <input type="number" id="idEditarDiario" placeholder="ID del asiento" class="w-full rounded-xl border border-stone-300 px-4 py-2.5">
               <div class="flex gap-3">
-                <button onclick="cargarAsientoEditarDiario()" class="flex-1 py-2 bg-sky-100 text-sky-800 rounded-xl hover:bg-sky-200 font-medium">Cargar</button>
+                <button onclick="cargarAsientoEditarDiario()" class="flex-1 py-2 bg-sky-100 text-sky-800 rounded-xl hover:bg-sky-200 font-medium">Editar</button>
                 <button onclick="eliminarAsientoDiario()" class="flex-1 py-2 bg-rose-100 text-rose-800 rounded-xl hover:bg-rose-200 font-medium">Eliminar</button>
               </div>
               <div id="editorDiario" class="hidden space-y-3 mt-3">
@@ -799,7 +812,7 @@
         }
       }
 
-      // Funciones de edición
+      // Funciones de edición (con folio)
       async function cargarAsientoEditarDiario() {
         const id = document.getElementById("idEditarDiario").value;
         if (!id) return showToast("Ingresá ID", "error");
