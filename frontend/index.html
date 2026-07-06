@@ -160,6 +160,15 @@
             <i data-lucide="file-bar-chart" class="w-5 h-5"></i>
             <span class="font-medium">Balance Comprobación</span>
           </button>
+          <!-- NUEVO: Botón de Ayuda -->
+          <button
+            onclick="mostrarModulo('ayuda')"
+            id="nav-ayuda"
+            class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10 transition-all duration-200 text-left"
+          >
+            <i data-lucide="help-circle" class="w-5 h-5"></i>
+            <span class="font-medium">Ayuda</span>
+          </button>
         </nav>
         <div
           class="mt-auto pt-6 border-t border-white/20 text-xs text-amber-200/60 flex items-center gap-2"
@@ -268,6 +277,9 @@
             break;
           case "comprobacion":
             cargarBalanceComprobacion();
+            break;
+          case "ayuda": // NUEVO
+            cargarAyuda();
             break;
         }
       }
@@ -1263,6 +1275,95 @@
           return;
         }
         imprimirReporte("Balance de Comprobación", tabla.outerHTML);
+      }
+
+      // ===================== NUEVO: AYUDA =====================
+      function cargarAyuda() {
+        const cont = document.getElementById("contenido");
+        cont.innerHTML = `
+        <div class="space-y-8 print-area">
+          <div class="mb-6">
+            <h1 class="text-3xl font-bold text-stone-800 font-serif">Ayuda del Sistema</h1>
+            <p class="text-stone-500">Guía completa de uso de cada módulo</p>
+          </div>
+
+          <!-- Acordeones de ayuda (sin colapsar, todo visible) -->
+          <div class="bg-white rounded-3xl shadow-soft border border-stone-200 p-6">
+            <h2 class="text-xl font-bold mb-4 flex items-center gap-2"><i data-lucide="book-open-text" class="w-6 h-6 text-amber-600"></i> Plan de Cuentas</h2>
+            <p class="text-stone-600 mb-4">El Plan de Cuentas es la lista jerárquica de todas las cuentas contables de la librería. Cada cuenta se identifica con un <strong>código</strong> separado por puntos (ej. 1, 1.1, 1.1.1).</p>
+            <ul class="list-disc pl-5 space-y-2 text-stone-700">
+              <li><strong>Agregar cuenta:</strong> Ingresa el código deseado y un nombre. El código debe ser único y no puede repetirse. La jerarquía se deduce de los niveles: 1 es padre de 1.1, etc.</li>
+              <li><strong>Eliminar cuenta:</strong> Puedes eliminar una cuenta ingresando su código exacto en la tarjeta correspondiente, o usando el ícono de eliminar (x) junto a cada cuenta en la lista.</li>
+              <li><strong>Visualización:</strong> Las cuentas se ordenan automáticamente de menor a mayor según el código, indentando los niveles para una mejor lectura.</li>
+              <li><strong>Impresión:</strong> Con el botón "Imprimir" se genera un PDF con el listado completo de cuentas y sus nombres.</li>
+            </ul>
+          </div>
+
+          <div class="bg-white rounded-3xl shadow-soft border border-stone-200 p-6">
+            <h2 class="text-xl font-bold mb-4 flex items-center gap-2"><i data-lucide="scale" class="w-6 h-6 text-amber-600"></i> Balance Inicial</h2>
+            <p class="text-stone-600 mb-4">Aquí se cargan los saldos iniciales de las cuentas. Solo se permite agregar saldos a <strong>cuentas hoja</strong> (aquellas que no tienen subcuentas).</p>
+            <ul class="list-disc pl-5 space-y-2 text-stone-700">
+              <li><strong>Agregar/Editar saldo:</strong> Selecciona la cuenta del desplegable, ingresa el monto y elige si va al DEBE o al HABER. Si la cuenta ya tenía saldo, se actualiza.</li>
+              <li><strong>Editar saldo:</strong> En la segunda tarjeta, selecciona la cuenta e ingresa el nuevo saldo. El sistema reemplazará el anterior.</li>
+              <li><strong>Eliminar saldo:</strong> Cada saldo en la lista tiene un botón de basura para eliminar ese saldo inicial. También puedes usar el botón "Eliminar" de la tarjeta (si estaba presente, pero se quitó; ahora solo desde la lista).</li>
+              <li>Los saldos con valor <strong>0</strong> no se muestran en la lista.</li>
+              <li>Puedes imprimir el balance inicial con el botón "Imprimir".</li>
+            </ul>
+          </div>
+
+          <div class="bg-white rounded-3xl shadow-soft border border-stone-200 p-6">
+            <h2 class="text-xl font-bold mb-4 flex items-center gap-2"><i data-lucide="scroll-text" class="w-6 h-6 text-amber-600"></i> Libro Diario</h2>
+            <p class="text-stone-600 mb-4">El Libro Diario registra todas las transacciones contables mediante asientos. Cada asiento tiene una fecha, una glosa (descripción) y varias líneas de detalle.</p>
+            <ul class="list-disc pl-5 space-y-2 text-stone-700">
+              <li><strong>Crear asiento:</strong> Completa la fecha y la glosa. Luego agrega líneas seleccionando la cuenta, un número de folio (opcional), el DEBE o HABER y el monto. Debe haber al menos dos líneas y el total del DEBE debe ser igual al total del HABER.</li>
+              <li><strong>Editar asiento:</strong> Ingresa el ID del asiento, haz clic en "Editar" (antes "Cargar") y modifica los campos. Al guardar se validará la igualdad de débitos y créditos.</li>
+              <li><strong>Eliminar asiento:</strong> Ingresa el ID y presiona "Eliminar".</li>
+              <li>Los asientos se muestran en orden cronológico. Cada uno se despliega en una tabla con los movimientos, folios y sumas totales.</li>
+              <li><strong>Impresión:</strong> El botón "Imprimir" genera un reporte con todos los asientos registrados.</li>
+            </ul>
+          </div>
+
+          <div class="bg-white rounded-3xl shadow-soft border border-stone-200 p-6">
+            <h2 class="text-xl font-bold mb-4 flex items-center gap-2"><i data-lucide="book" class="w-6 h-6 text-amber-600"></i> Libro Mayor</h2>
+            <p class="text-stone-600 mb-4">El Libro Mayor muestra el movimiento detallado de una cuenta específica, combinando el saldo inicial y todos los asientos del Diario donde aparece esa cuenta.</p>
+            <ul class="list-disc pl-5 space-y-2 text-stone-700">
+              <li>Selecciona una cuenta del desplegable (solo aparecen cuentas que hayan sido utilizadas en el Diario).</li>
+              <li>La tabla muestra: Fecha, Glosa, Folio, Débito, Crédito y el <strong>saldo acumulado</strong> después de cada operación.</li>
+              <li>Se incluye el saldo inicial y el saldo final.</li>
+              <li><strong>Impresión:</strong> Al igual que en los otros módulos, puedes imprimir el mayor de la cuenta seleccionada.</li>
+            </ul>
+          </div>
+
+          <div class="bg-white rounded-3xl shadow-soft border border-stone-200 p-6">
+            <h2 class="text-xl font-bold mb-4 flex items-center gap-2"><i data-lucide="file-bar-chart" class="w-6 h-6 text-amber-600"></i> Balance de Comprobación</h2>
+            <p class="text-stone-600 mb-4">Es un resumen de todas las cuentas con sus totales de movimientos (incluyendo saldos iniciales) y los saldos deudores y acreedores resultantes.</p>
+            <ul class="list-disc pl-5 space-y-2 text-stone-700">
+              <li>Se muestra una tabla con todas las cuentas registradas (del Plan de Cuentas), sus sumas del Debe y Haber, y los saldos deudor/acreedor.</li>
+              <li>Al final se totalizan las columnas para verificar que el balance esté cuadrado.</li>
+              <li><strong>Impresión:</strong> Puedes imprimir el balance de comprobación completo.</li>
+            </ul>
+          </div>
+
+          <div class="bg-white rounded-3xl shadow-soft border border-stone-200 p-6">
+            <h2 class="text-xl font-bold mb-4 flex items-center gap-2"><i data-lucide="printer" class="w-6 h-6 text-amber-600"></i> Funcionalidad de impresión</h2>
+            <p class="text-stone-600 mb-4">Todos los módulos incluyen un botón <strong>Imprimir</strong> (ícono de impresora) que genera un reporte profesional con el membrete de la librería, la fecha y el contenido en formato PDF.</p>
+            <p class="text-stone-700">Al hacer clic, se abre una nueva ventana donde puedes guardar o imprimir directamente. Los reportes incluyen tablas ordenadas y el logotipo de la empresa.</p>
+          </div>
+
+          <div class="bg-amber-50 rounded-3xl shadow-soft border border-amber-200 p-6">
+            <h2 class="text-xl font-bold mb-4 flex items-center gap-2"><i data-lucide="info" class="w-6 h-6 text-amber-600"></i> Consejos generales</h2>
+            <ul class="list-disc pl-5 space-y-2 text-stone-700">
+              <li>Siempre completa el <strong>Plan de Cuentas</strong> antes de comenzar a registrar saldos o asientos.</li>
+              <li>El <strong>Balance Inicial</strong> solo acepta cuentas hoja (las más detalladas). Las cuentas de nivel superior se calcularán automáticamente en el Balance de Comprobación.</li>
+              <li>En el Libro Diario, el <strong>folio</strong> es un número opcional que identifica la línea del asiento. Puede servir para referenciar documentos físicos.</li>
+              <li>Si necesitas modificar un asiento después de registrado, usa la sección "Editar / Eliminar" del Libro Diario ingresando su ID (el número que aparece en la lista).</li>
+              <li>Para consultar el historial de una cuenta en particular, ve al <strong>Libro Mayor</strong> y selecciona la cuenta deseada.</li>
+              <li>Antes de generar informes, verifica que los saldos iniciales y los asientos estén correctos. El balance de comprobación mostrará cualquier descuadre.</li>
+            </ul>
+          </div>
+        </div>
+      `;
+        lucide.createIcons();
       }
 
       // ===================== INICIALIZACIÓN =====================
