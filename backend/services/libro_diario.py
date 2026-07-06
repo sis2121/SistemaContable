@@ -3,6 +3,36 @@ from fastapi import HTTPException
 
 class LibroDiarioService:
 
+    def _obtener_asiento_completo(self, id_asiento: int):
+        """Devuelve un asiento con sus líneas formateado (usado internamente)."""
+        asiento = supabase.table("asientos") \
+            .select("*") \
+            .eq("id_asiento", id_asiento) \
+            .single() \
+            .execute().data
+
+        detalles = supabase.table("detalle_asientos") \
+            .select("codigo, debe_haber, monto, folio") \
+            .eq("id_asiento", id_asiento) \
+            .execute().data
+
+        lineas = []
+        for d in detalles:
+            cuenta_info = supabase.table("plan_cuentas") \
+                .select("nombre") \
+                .eq("codigo", d["codigo"]) \
+                .single().execute().data
+            lineas.append({
+                "codigo": d["codigo"],
+                "nombre": cuenta_info["nombre"] if cuenta_info else "",
+                "debe_haber": d["debe_haber"],
+                "monto": d["monto"],
+                "folio": d.get("folio", "")
+            })
+
+        asiento["lineas"] = lineas
+        return asiento
+
     def registrar_asiento(self, fecha: str, glosa: str, lineas: list):
         # Validar que total debe == haber
         total_debe = sum(l["monto"] for l in lineas if l["debe_haber"] == "DEBE")
@@ -10,6 +40,7 @@ class LibroDiarioService:
         if total_debe != total_haber:
             raise HTTPException(status_code=400, detail="El total del DEBE debe ser igual al total del HABER.")
 
+        # Insertar cabecera
         asiento = supabase.table("asientos").insert({
             "fecha": fecha,
             "glosa": glosa
@@ -17,6 +48,7 @@ class LibroDiarioService:
 
         id_asiento = asiento["id_asiento"]
 
+        # Validar cuentas
         codigos = [l["codigo"] for l in lineas]
         cuentas_db = supabase.table("plan_cuentas") \
             .select("codigo") \
@@ -27,6 +59,7 @@ class LibroDiarioService:
             if c not in existentes:
                 raise HTTPException(status_code=400, detail=f"Cuenta no encontrada: {c}")
 
+        # Insertar líneas
         detalles = []
         for linea in lineas:
             detalles.append({
@@ -34,10 +67,12 @@ class LibroDiarioService:
                 "codigo": linea["codigo"],
                 "debe_haber": linea["debe_haber"],
                 "monto": linea["monto"],
-                "folio": linea.get("folio", "")   # nuevo campo
+                "folio": linea.get("folio", "")
             })
         supabase.table("detalle_asientos").insert(detalles).execute()
-        return asiento
+
+        # Retornar el asiento completo con líneas
+        return self._obtener_asiento_completo(id_asiento)
 
     def listar_asientos(self):
         asientos = supabase.table("asientos") \
@@ -108,8 +143,6 @@ class LibroDiarioService:
                 "folio": l.get("folio", "")
             })
         supabase.table("detalle_asientos").insert(nuevos).execute()
-        return supabase.table("asientos") \
-            .select("*") \
-            .eq("id_asiento", id_asiento) \
-            .single() \
-            .execute().data
+
+        # Devolver el asiento actualizado completo
+        return self._obtener_asiento_completo(id_asiento)
