@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sistema Contable · Librería Premium</title>
+    <title>Librería El Estudiante · Sistema Contable</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -68,11 +68,18 @@
         id="sidebar"
         class="sidebar-gradient text-amber-50 w-72 flex-shrink-0 flex flex-col p-6 shadow-2xl z-50 fixed lg:static inset-y-0 left-0 transform -translate-x-full lg:translate-x-0 transition-transform duration-300"
       >
-        <div class="flex items-center gap-3 mb-12">
-          <i data-lucide="book-open" class="w-10 h-10 text-amber-300"></i>
-          <div>
-            <h2 class="text-xl font-bold tracking-tight">ContablePro</h2>
-            <p class="text-xs text-amber-200/70">Gestión de librería</p>
+        <!-- Logo y nombre de la librería -->
+        <div class="flex flex-col items-center gap-4 mb-10">
+          <img
+            src="logo.png"
+            alt="Logo Librería El Estudiante"
+            class="w-20 h-20 object-contain rounded-2xl border-2 border-amber-300/30 shadow-lg shadow-amber-500/10"
+          />
+          <div class="text-center">
+            <h2 class="text-xl font-bold tracking-tight">
+              Librería El Estudiante
+            </h2>
+            <p class="text-xs text-amber-200/70">Sistema Contable</p>
           </div>
         </div>
         <nav class="space-y-2 flex-1">
@@ -105,7 +112,7 @@
           class="mt-auto pt-6 border-t border-white/20 text-xs text-amber-200/60 flex items-center gap-2"
         >
           <i data-lucide="settings" class="w-4 h-4"></i>
-          v2.1 · Premium
+          v2.1 · El Estudiante
         </div>
       </aside>
 
@@ -117,7 +124,9 @@
           >
             <i data-lucide="menu" class="w-6 h-6 text-stone-700"></i>
           </button>
-          <h1 class="text-2xl font-bold text-stone-800">ContablePro</h1>
+          <h1 class="text-2xl font-bold text-stone-800">
+            Librería El Estudiante
+          </h1>
         </div>
 
         <div id="contenido" class="max-w-6xl mx-auto space-y-8"></div>
@@ -511,7 +520,6 @@
       }
 
       // ===================== LIBRO DIARIO =====================
-      // ... (mantenido igual que antes, sin cambios)
       async function cargarLibroDiario() {
         const cont = document.getElementById("contenido");
         cont.innerHTML = `
@@ -577,7 +585,6 @@
         lucide.createIcons();
       }
 
-      // ... (funciones del libro diario sin cambios)
       function agregarLineaDiario() {
         const container = document.getElementById("lineasDiarioContainer");
         const div = document.createElement("div");
