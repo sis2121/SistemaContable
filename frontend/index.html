@@ -212,15 +212,312 @@
         }
       }
 
-      // ===================== PLAN DE CUENTAS (sin cambios) =====================
-      // ... (se omite por brevedad, es el mismo código anterior)
-      // [Incluir aquí el código completo del Plan de Cuentas tal como estaba en la última versión]
+      // ===================== PLAN DE CUENTAS =====================
+      async function cargarPlanCuentas() {
+        const cont = document.getElementById("contenido");
+        cont.innerHTML = `
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+          <div>
+            <h1 class="text-3xl font-bold text-stone-800">Plan de Cuentas</h1>
+            <p class="text-stone-500">Gestión de códigos contables</p>
+          </div>
+          <button onclick="cargarPlanCuentas()" class="px-4 py-2 bg-white border border-stone-300 hover:bg-stone-50 text-stone-700 rounded-xl transition flex items-center gap-2 shadow-sm">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i> Actualizar
+          </button>
+        </div>
+        <div class="grid md:grid-cols-2 gap-6 mb-8">
+          <div class="bg-white p-6 rounded-3xl shadow-soft border border-stone-200 card-hover transition-all">
+            <h2 class="text-lg font-semibold text-stone-700 mb-4 flex items-center gap-2"><i data-lucide="plus-circle" class="w-5 h-5 text-emerald-600"></i> Nueva cuenta</h2>
+            <div class="space-y-3">
+              <input id="codigoPlan" placeholder="Código (ej: 1.1.2)" class="w-full rounded-xl border border-stone-300 px-4 py-2.5 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none transition">
+              <input id="nombrePlan" placeholder="Nombre de la cuenta" class="w-full rounded-xl border border-stone-300 px-4 py-2.5 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none transition">
+              <button onclick="guardarCuenta()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium transition shadow-md">Agregar cuenta</button>
+            </div>
+          </div>
+          <div class="bg-white p-6 rounded-3xl shadow-soft border border-stone-200 card-hover transition-all">
+            <h2 class="text-lg font-semibold text-stone-700 mb-4 flex items-center gap-2"><i data-lucide="trash-2" class="w-5 h-5 text-rose-600"></i> Eliminar cuenta</h2>
+            <div class="space-y-3">
+              <input id="codigoEliminarPlan" placeholder="Código exacto a eliminar" class="w-full rounded-xl border border-stone-300 px-4 py-2.5 focus:border-rose-500 outline-none transition">
+              <button onclick="eliminarCuenta()" class="w-full py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-medium transition shadow-md">Eliminar cuenta</button>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white rounded-3xl shadow-soft border border-stone-200 p-6">
+          <h2 class="text-xl font-semibold text-stone-700 mb-4 flex items-center gap-2"><i data-lucide="list" class="w-5 h-5 text-amber-600"></i> Cuentas registradas</h2>
+          <ul id="listaPlan" class="space-y-2 max-h-96 overflow-y-auto scrollbar-thin"></ul>
+        </div>
+      `;
+        await listarCuentas();
+        lucide.createIcons();
+      }
 
-      // ===================== BALANCE INICIAL (sin cambios) =====================
-      // ... (se omite por brevedad, es el mismo código anterior)
-      // [Incluir aquí el código completo del Balance Inicial tal como estaba en la última versión]
+      async function listarCuentas() {
+        const lista = document.getElementById("listaPlan");
+        lista.innerHTML =
+          '<li class="text-stone-400 italic p-4 text-center">Cargando...</li>';
+        try {
+          const res = await fetch(`${API}/cuentas`);
+          if (!res.ok) throw new Error("Error al cargar");
+          const cuentas = await res.json();
+          cuentas.sort(compararCodigo);
+          lista.innerHTML = "";
+          if (!cuentas.length) {
+            lista.innerHTML =
+              '<li class="text-stone-400 italic p-4 text-center">No hay cuentas registradas.</li>';
+            return;
+          }
+          cuentas.forEach((c) => {
+            const nivel = c.codigo.split(".").length - 1;
+            lista.innerHTML += `
+            <li class="flex items-center justify-between bg-stone-50 p-3 rounded-xl border border-stone-100 hover:bg-amber-50/50 transition group"
+                style="padding-left:${nivel * 1.5}rem;">
+              <div class="flex items-center gap-3">
+                <span class="font-mono font-semibold text-amber-900 bg-amber-100 px-2 py-1 rounded-lg text-sm">${c.codigo}</span>
+                <span class="text-stone-700">${c.nombre}</span>
+              </div>
+              <button onclick="eliminarCuentaPorCodigo('${c.codigo}')" class="text-stone-400 hover:text-rose-500 transition p-1 opacity-0 group-hover:opacity-100">
+                <i data-lucide="x-circle" class="w-5 h-5"></i>
+              </button>
+            </li>`;
+          });
+          lucide.createIcons();
+        } catch (e) {
+          lista.innerHTML = `<li class="text-rose-500 p-4">Error al cargar cuentas: ${e.message}</li>`;
+        }
+      }
 
-      // ===================== LIBRO DIARIO (MEJORADO: FOLIO + TABLA) =====================
+      async function guardarCuenta() {
+        const codigo = document.getElementById("codigoPlan").value.trim();
+        const nombre = document.getElementById("nombrePlan").value.trim();
+        if (!codigo || !nombre)
+          return showToast("Completá todos los campos", "error");
+        try {
+          const res = await fetch(`${API}/cuentas`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ codigo, nombre }),
+          });
+          if (!res.ok) {
+            const error = await res.json();
+            throw new Error(error.detail || "Error al guardar");
+          }
+          showToast("Cuenta agregada correctamente", "success");
+          document.getElementById("codigoPlan").value = "";
+          document.getElementById("nombrePlan").value = "";
+          listarCuentas();
+        } catch (e) {
+          showToast(e.message, "error");
+        }
+      }
+
+      async function eliminarCuentaPorCodigo(codigo) {
+        if (!confirm(`¿Eliminar la cuenta ${codigo}?`)) return;
+        try {
+          const res = await fetch(`${API}/cuentas/${codigo}`, {
+            method: "DELETE",
+          });
+          if (!res.ok) throw new Error("Error al eliminar");
+          showToast("Cuenta eliminada", "success");
+          listarCuentas();
+        } catch (e) {
+          showToast(e.message, "error");
+        }
+      }
+
+      async function eliminarCuenta() {
+        const codigo = document
+          .getElementById("codigoEliminarPlan")
+          .value.trim();
+        if (!codigo) return showToast("Ingresá el código", "error");
+        await eliminarCuentaPorCodigo(codigo);
+        document.getElementById("codigoEliminarPlan").value = "";
+      }
+
+      // ===================== BALANCE INICIAL =====================
+      async function cargarBalance() {
+        const cont = document.getElementById("contenido");
+        cont.innerHTML = `
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+          <div>
+            <h1 class="text-3xl font-bold text-stone-800">Balance Inicial</h1>
+            <p class="text-stone-500">Saldos de apertura (solo cuentas hoja)</p>
+          </div>
+          <button onclick="cargarBalance()" class="px-4 py-2 bg-white border border-stone-300 hover:bg-stone-50 text-stone-700 rounded-xl transition flex items-center gap-2 shadow-sm">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i> Actualizar
+          </button>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-6 mb-8">
+          <div class="bg-white p-6 rounded-3xl shadow-soft border border-stone-200 card-hover transition-all">
+            <h2 class="text-lg font-semibold mb-4 flex items-center gap-2"><i data-lucide="wallet" class="w-5 h-5 text-emerald-600"></i> Agregar/Editar saldo</h2>
+            <div class="space-y-3">
+              <label class="text-sm text-stone-500">Cuenta</label>
+              <select id="codigoBalance" class="w-full rounded-xl border border-stone-300 px-4 py-2.5 bg-white">
+                <option value="">Seleccionar cuenta...</option>
+              </select>
+              <input id="saldoBalance" type="number" step="0.01" placeholder="Saldo" class="w-full rounded-xl border border-stone-300 px-4 py-2.5">
+              <select id="debeHaberBalance" class="w-full rounded-xl border border-stone-300 px-4 py-2.5 bg-white">
+                <option value="DEBE">DEBE</option>
+                <option value="HABER">HABER</option>
+              </select>
+              <button onclick="guardarSaldo()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium transition shadow-md">
+                Guardar saldo
+              </button>
+            </div>
+          </div>
+
+          <div class="bg-white p-6 rounded-3xl shadow-soft border border-stone-200 card-hover transition-all">
+            <h2 class="text-lg font-semibold mb-4 flex items-center gap-2"><i data-lucide="pencil" class="w-5 h-5 text-amber-600"></i> Editar / Eliminar</h2>
+            <div class="space-y-3">
+              <label class="text-sm text-stone-500">Cuenta</label>
+              <select id="codigoEditarBalance" class="w-full rounded-xl border border-stone-300 px-4 py-2.5 bg-white">
+                <option value="">Seleccionar cuenta...</option>
+              </select>
+              <input id="nuevoSaldoBalance" type="number" step="0.01" placeholder="Nuevo saldo (solo para editar)" class="w-full rounded-xl border border-stone-300 px-4 py-2.5">
+              <div class="flex gap-3">
+                <button onclick="editarSaldo()" class="flex-1 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-medium transition">Editar</button>
+                <button onclick="eliminarSaldo()" class="flex-1 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-medium transition">Eliminar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-3xl shadow-soft border border-stone-200 p-6">
+          <h2 class="text-xl font-semibold mb-4 flex items-center gap-2"><i data-lucide="list" class="w-5 h-5 text-amber-600"></i> Saldos iniciales (≠ 0)</h2>
+          <ul id="listaBalance" class="space-y-2 max-h-96 overflow-y-auto scrollbar-thin"></ul>
+        </div>
+      `;
+        await Promise.all([poblarSelectoresBalance(), listarBalances()]);
+        lucide.createIcons();
+      }
+
+      async function poblarSelectoresBalance() {
+        try {
+          const res = await fetch(`${API}/cuentas`);
+          if (!res.ok) return;
+          const cuentas = await res.json();
+          cuentas.sort(compararCodigo);
+
+          const hojas = cuentas.filter(
+            (c) =>
+              !cuentas.some((otra) => otra.codigo.startsWith(c.codigo + ".")),
+          );
+
+          const select1 = document.getElementById("codigoBalance");
+          const select2 = document.getElementById("codigoEditarBalance");
+          if (!select1 || !select2) return;
+
+          select1.innerHTML = '<option value="">Seleccionar cuenta...</option>';
+          select2.innerHTML = '<option value="">Seleccionar cuenta...</option>';
+          hojas.forEach((c) => {
+            const option = `<option value="${c.codigo}">${c.codigo} - ${c.nombre}</option>`;
+            select1.innerHTML += option;
+            select2.innerHTML += option;
+          });
+        } catch (e) {
+          console.error("Error al poblar selectores de balance", e);
+        }
+      }
+
+      async function listarBalances() {
+        const lista = document.getElementById("listaBalance");
+        lista.innerHTML =
+          '<li class="text-stone-400 italic p-4 text-center">Cargando...</li>';
+        try {
+          const res = await fetch(`${API}/balance-inicial`);
+          if (!res.ok) throw new Error("Error al cargar");
+          const balances = await res.json();
+          lista.innerHTML = "";
+          if (!balances.length) {
+            lista.innerHTML =
+              '<li class="text-stone-400 italic p-4 text-center">No hay saldos iniciales (con saldo ≠ 0).</li>';
+            return;
+          }
+          balances.forEach((b) => {
+            lista.innerHTML += `
+            <li class="flex flex-col sm:flex-row sm:items-center justify-between bg-stone-50 p-3 rounded-xl border border-stone-100 gap-2">
+              <div>
+                <span class="font-mono font-semibold text-amber-900">${b.codigo}</span>
+                <span class="text-stone-600 ml-2">${b.nombre}</span>
+              </div>
+              <span class="font-mono text-sm px-3 py-1 rounded-full ${b.debe_haber === "DEBE" ? "bg-blue-100 text-blue-800" : "bg-rose-100 text-rose-800"} self-start sm:self-center">
+                ${b.debe_haber} $${b.saldo}
+              </span>
+            </li>`;
+          });
+        } catch (e) {
+          lista.innerHTML = `<li class="text-rose-500 p-4">Error al cargar saldos.</li>`;
+        }
+      }
+
+      async function guardarSaldo() {
+        const codigo = document.getElementById("codigoBalance").value;
+        const saldo = document.getElementById("saldoBalance").value;
+        const debeHaber = document.getElementById("debeHaberBalance").value;
+        if (!codigo || !saldo)
+          return showToast(
+            "Seleccioná una cuenta y completá el saldo",
+            "error",
+          );
+        try {
+          const res = await fetch(`${API}/balance-inicial`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              codigo,
+              saldo: parseFloat(saldo),
+              debe_haber: debeHaber,
+            }),
+          });
+          if (!res.ok) throw new Error("Error al guardar");
+          showToast("Saldo guardado", "success");
+          document.getElementById("saldoBalance").value = "";
+          listarBalances();
+        } catch (e) {
+          showToast(e.message, "error");
+        }
+      }
+
+      async function editarSaldo() {
+        const codigo = document.getElementById("codigoEditarBalance").value;
+        const saldo = document.getElementById("nuevoSaldoBalance").value;
+        if (!codigo || !saldo)
+          return showToast(
+            "Seleccioná una cuenta e ingresá el nuevo saldo",
+            "error",
+          );
+        try {
+          const res = await fetch(`${API}/balance-inicial/${codigo}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ saldo: parseFloat(saldo) }),
+          });
+          if (!res.ok) throw new Error("Error al editar");
+          showToast("Saldo actualizado", "success");
+          document.getElementById("nuevoSaldoBalance").value = "";
+          listarBalances();
+        } catch (e) {
+          showToast(e.message, "error");
+        }
+      }
+
+      async function eliminarSaldo() {
+        const codigo = document.getElementById("codigoEditarBalance").value;
+        if (!codigo) return showToast("Seleccioná una cuenta", "error");
+        if (!confirm(`¿Eliminar saldo de la cuenta ${codigo}?`)) return;
+        try {
+          const res = await fetch(`${API}/balance-inicial/${codigo}`, {
+            method: "DELETE",
+          });
+          if (!res.ok) throw new Error("Error al eliminar");
+          showToast("Saldo eliminado", "success");
+          listarBalances();
+        } catch (e) {
+          showToast(e.message, "error");
+        }
+      }
+
+      // ===================== LIBRO DIARIO =====================
       async function cargarLibroDiario() {
         const cont = document.getElementById("contenido");
         cont.innerHTML = `
@@ -235,7 +532,6 @@
         </div>
 
         <div class="grid md:grid-cols-2 gap-6 mb-8">
-          <!-- Nuevo asiento -->
           <div class="bg-white p-6 rounded-3xl shadow-soft border border-stone-200 card-hover transition-all">
             <h2 class="text-lg font-semibold mb-4 flex items-center gap-2"><i data-lucide="file-plus" class="w-5 h-5 text-emerald-600"></i> Nuevo asiento</h2>
             <div class="space-y-3">
@@ -262,7 +558,6 @@
             </div>
           </div>
 
-          <!-- Editar / Eliminar -->
           <div class="bg-white p-6 rounded-3xl shadow-soft border border-stone-200 card-hover transition-all">
             <h2 class="text-lg font-semibold mb-4 flex items-center gap-2"><i data-lucide="folder-edit" class="w-5 h-5 text-amber-600"></i> Editar / Eliminar</h2>
             <div class="space-y-3">
@@ -282,7 +577,6 @@
           </div>
         </div>
 
-        <!-- Listado de asientos (formato tabla) -->
         <div id="listaAsientosDiario" class="space-y-6"></div>
       `;
         await Promise.all([poblarSelectoresDiario(), listarAsientosDiario()]);
@@ -362,10 +656,7 @@
           const data = await res.json();
           if (!res.ok) throw new Error(data.detail || "Error al registrar");
 
-          // Mostrar el asiento recién creado
-          const asiento = data;
-          mostrarDetalleAsiento(asiento);
-
+          mostrarDetalleAsiento(data);
           showToast("Asiento registrado correctamente", "success");
           document.getElementById("fechaDiario").value = "";
           document.getElementById("glosaDiario").value = "";
@@ -384,14 +675,13 @@
           </div>`;
           poblarSelectoresDiario();
           lucide.createIcons();
-          listarAsientosDiario(); // actualizar lista completa
+          listarAsientosDiario();
         } catch (e) {
           showToast(e.message, "error");
         }
       }
 
       function mostrarDetalleAsiento(asiento) {
-        // Construir tabla del asiento
         let lineasHtml = "";
         let totalDebe = 0,
           totalHaber = 0;
@@ -509,7 +799,7 @@
         }
       }
 
-      // Funciones de edición (con folio)
+      // Funciones de edición
       async function cargarAsientoEditarDiario() {
         const id = document.getElementById("idEditarDiario").value;
         if (!id) return showToast("Ingresá ID", "error");
@@ -540,7 +830,6 @@
           });
           document.getElementById("editorDiario").classList.remove("hidden");
           await poblarSelectoresDiario();
-          // Seleccionar los códigos
           document.querySelectorAll(".linea-edit").forEach((el, idx) => {
             if (asiento.lineas[idx]) {
               el.querySelector(".select-codigo-diario").value =
