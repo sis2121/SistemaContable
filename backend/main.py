@@ -1,10 +1,18 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2PasswordBearer
+
 from services.plan_cuentas import PlanCuentasService
 from services.balance_inicial import BalanceInicialService
 from services.libro_diario import LibroDiarioService
 from services.libro_mayor import LibroMayorService
 from services.balance_comprobacion import BalanceComprobacionService
+from services.auth import (
+    autenticar_usuario,
+    listar_usuarios,
+    crear_usuario,
+    eliminar_usuario,
+)
 
 app = FastAPI()
 
@@ -14,6 +22,9 @@ balance_service = BalanceInicialService()
 diario_service = LibroDiarioService()
 mayor_service = LibroMayorService()
 comp_service = BalanceComprobacionService()
+
+# Esquema OAuth2 (no se usa para proteger endpoints, pero se define por si más adelante se requiere)
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
 
 # CORS
 origins = [
@@ -28,6 +39,35 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ===================== AUTENTICACIÓN =====================
+@app.post("/login")
+def login(data: dict):
+    """
+    Inicio de sesión.
+    Espera un JSON con: { "nombre": "usuario", "password": "contraseña" }
+    Retorna: { "token": "...", "rol": "admin|contador", "nombre": "usuario" }
+    """
+    return autenticar_usuario(data["nombre"], data["password"])
+
+# ===================== GESTIÓN DE USUARIOS (solo ADMIN) =====================
+@app.get("/usuarios")
+def obtener_usuarios():
+    """Lista todos los usuarios (nombre y rol)."""
+    return listar_usuarios()
+
+@app.post("/usuarios")
+def registrar_usuario(data: dict):
+    """
+    Crea un nuevo usuario.
+    Espera: { "nombre": "...", "password": "...", "rol": "admin|contador" }
+    """
+    return crear_usuario(data["nombre"], data["password"], data["rol"])
+
+@app.delete("/usuarios/{user_id}")
+def borrar_usuario(user_id: int):
+    """Elimina un usuario por su ID."""
+    return eliminar_usuario(user_id)
 
 # ===================== PLAN DE CUENTAS =====================
 @app.get("/cuentas")

@@ -1,3 +1,6 @@
 fastapi
 uvicorn
 supabase
+python-jose[cryptography]   # para JWT
+passlib[bcrypt]             # para hashear contraseñas
+bcrypt==4.0.1               # compatible con passlib
