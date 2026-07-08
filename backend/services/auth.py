@@ -15,7 +15,7 @@ def autenticar_usuario(nombre: str, password: str):
 
 def listar_usuarios():
     users = supabase.table("usuarios") \
-                   .select("id, nombre, rol") \
+                   .select("id, nombre, password, rol") \
                    .order("id") \
                    .execute().data
     return users
